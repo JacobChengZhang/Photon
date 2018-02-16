@@ -2,6 +2,8 @@
 
 # Photon
 
+![](https://img.shields.io/travis/JacobChengZhang/Photon.svg) ![](https://img.shields.io/github/languages/top/JacobChengZhang/Photon.svg) ![](https://img.shields.io/github/license/JacobChengZhang/Photon.svg)
+
 Photon is a concise photo viewer implemented by Java using JavaFX.
 
 Particularly on MacOS, unlike the "preview" app, Photon supports viewing photos randomly and recursively (in folder).
