@@ -12,6 +12,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -62,8 +64,7 @@ public class Photon extends Application{
         int tmpHeight = gd.getDisplayMode().getHeight();
 
         root.setPrefSize(tmpWidth, tmpHeight);
-        Rectangle rect = new Rectangle(tmpWidth, tmpHeight, Settings.BACKGROUND_COLOR);
-        root.getChildren().add(rect);
+        root.setBackground(new Background(new BackgroundFill(Settings.BACKGROUND_COLOR, null, null)));
 
         startupTips = new Text(Settings.STARTUP_TIPS);
         startupTips.setFill(Color.WHITE);
