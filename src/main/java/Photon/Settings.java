@@ -9,6 +9,7 @@ public class Settings {
                                             "Press '\u2191'                  ->  Show in Finder\n\n" +
                                             "Press '\u2190'                  ->  Previous Photo\n\n" +
                                             "Press '/'                  ->  Toggle In-Order / Random\n\n" +
+                                            "Press 'P'                  ->  Toggle Slide Mode\n\n" +
                                             "Scroll                     ->  Zoom Photo\n\n" +
                                             "Drag                       ->  Move Photo\n\n" +
                                             "Press Esc                  ->  Quit\n\n";
@@ -18,4 +19,8 @@ public class Settings {
   public static final Color BACKGROUND_COLOR = Color.BLACK;
   public static final boolean ADD_IMAGE_RECURSIVELY = true;
   public static final int MIN_PIXELS = 10;
+
+  public static final int RECALL_CAPABILITY = 77;
+
+  public static final int SLIDE_INTERVAL = 4000;
 }

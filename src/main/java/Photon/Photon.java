@@ -10,7 +10,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.StackPane;
@@ -23,7 +22,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +38,7 @@ public class Photon extends Application {
   private double imgHeight = 0;
 
   private boolean ordered = true;
-  private int pos = -1;
+  private int pos = 0;
   private Set fileExtensions = new HashSet() {
     {
       add(".jpg");
@@ -53,7 +51,19 @@ public class Photon extends Application {
       //add(".ico");
     }
   };
-  //private Queue<Integer> previousFiles = new Que
+  private LinkedList<Integer> previousFiles = new LinkedList<>();
+
+  private volatile boolean slidePlaying = false;
+  private Runnable runnable = () -> {
+    try {
+      while (slidePlaying) {
+        Thread.sleep(Settings.SLIDE_INTERVAL);
+        btnClicked(true);
+      }
+    } catch (InterruptedException ie) {
+      ie.printStackTrace();
+    }
+  };
 
   @Override
   public void start(Stage primaryStage) {
@@ -67,15 +77,34 @@ public class Photon extends Application {
           break;
         }
         case LEFT: {
+          recall();
           break;
         }
         case RIGHT: {
-          btnClicked(null);
+          btnClicked(true);
           break;
         }
         case SLASH: {
           ordered = !ordered;
           primaryStage.setTitle(genTitle());
+          break;
+        }
+        case P: {
+          if (fileList != null) {
+            /*
+            Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
+            you can achieve a higher speed on slide playing.
+            So, it's not a bug. It is actually a feature.
+             */
+            if (slidePlaying) {
+              slidePlaying = false;
+            } else {
+              slidePlaying = true;
+              Thread thread = new Thread(runnable);
+              thread.start();
+            }
+            primaryStage.setTitle(genTitle());
+          }
           break;
         }
         case ESCAPE: {
@@ -169,7 +198,7 @@ public class Photon extends Application {
 
     root.setOnMouseClicked(e -> {
       if (e.getButton().name().equals("SECONDARY")) {
-        btnClicked(e);
+        btnClicked(true);
       }
 //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
 //                btnClicked(e);
@@ -184,10 +213,15 @@ public class Photon extends Application {
   }
 
   private String genTitle() {
-    return Settings.APP_NAME + (ordered ? "    #in-order" : "    #random");
+    return new StringBuilder()
+            .append(Settings.APP_NAME)
+            .append("    ")
+            .append(ordered ? "#in-order" : "#random")
+            .append(slidePlaying ? " #slide-mode" : "")
+            .toString();
   }
 
-  private void btnClicked(MouseEvent me) {
+  private void btnClicked(boolean moveForward) {
     if (fileList == null) {
       // get files at first
       DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -208,15 +242,31 @@ public class Photon extends Application {
       }
     }
 
-    if (ordered) {
-      pos++;
-      if (pos == fileList.length) {
-        pos = 0;
+    if (pos < 0) {
+      if (moveForward) {
+        pos++;
+        if (pos == 0) {
+          pos =  previousFiles.get(previousFiles.size() - 1);
+          genNextPos();
+          currentFile = fileList[pos];
+        } else {
+          currentFile = fileList[previousFiles.get(previousFiles.size() + pos)];
+        }
+      } else {
+        currentFile = fileList[previousFiles.get(previousFiles.size() + pos)];
       }
     } else {
-      pos = new Random().nextInt(fileList.length);
+      if (pos == 0 && previousFiles.size() == 0) {
+        pos = -1;
+      }
+      genNextPos();
+      previousFiles.add(pos);
+      if (previousFiles.size() > Settings.RECALL_CAPABILITY) {
+        previousFiles.removeFirst();
+      }
+
+      currentFile = fileList[pos];
     }
-    currentFile = fileList[pos];
 
     Image image = null;
     try {
@@ -229,6 +279,30 @@ public class Photon extends Application {
     imgHeight = image.getHeight();
     imgView.setImage(image);
     reset(imgView, imgWidth, imgHeight);
+  }
+
+  private void recall() {
+    if (pos <= -previousFiles.size()) {
+      return;
+    }
+
+    if (pos >= 0) {
+      pos = -2;
+    } else {
+      pos--;
+    }
+    btnClicked(false);
+  }
+
+  private void genNextPos() {
+    if (ordered) {
+      pos++;
+      if (pos == fileList.length) {
+        pos = 0;
+      }
+    } else {
+      pos = new Random().nextInt(fileList.length);
+    }
   }
 
   private void revealImageInFinder() {
