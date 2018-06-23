@@ -10,13 +10,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -25,10 +23,11 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 public class Photon extends Application {
   private Scene scene = null;
@@ -40,9 +39,25 @@ public class Photon extends Application {
   private double imgWidth = 0;
   private double imgHeight = 0;
 
+  private boolean ordered = true;
+  private int pos = -1;
+  private Set fileExtensions = new HashSet() {
+    {
+      add(".jpg");
+      add(".png");
+      add(".gif");
+      add("jpeg");
+      add(".bmp");
+      //add(".tif");
+      //add("tiff");
+      //add(".ico");
+    }
+  };
+  //private Queue<Integer> previousFiles = new Que
+
   @Override
   public void start(Stage primaryStage) {
-    primaryStage.setTitle(Settings.APP_NAME);
+    primaryStage.setTitle(genTitle());
     primaryStage.setResizable(Settings.WINDOW_RESIZABLE);
     scene = new Scene(createScene());
     scene.setOnKeyPressed(k -> {
@@ -56,6 +71,11 @@ public class Photon extends Application {
         }
         case RIGHT: {
           btnClicked(null);
+          break;
+        }
+        case SLASH: {
+          ordered = !ordered;
+          primaryStage.setTitle(genTitle());
           break;
         }
         case ESCAPE: {
@@ -163,6 +183,10 @@ public class Photon extends Application {
     root.getChildren().add(imgView);
   }
 
+  private String genTitle() {
+    return Settings.APP_NAME + (ordered ? "    #in-order" : "    #random");
+  }
+
   private void btnClicked(MouseEvent me) {
     if (fileList == null) {
       // get files at first
@@ -184,7 +208,15 @@ public class Photon extends Application {
       }
     }
 
-    currentFile = fileList[new Random().nextInt(fileList.length)];
+    if (ordered) {
+      pos++;
+      if (pos == fileList.length) {
+        pos = 0;
+      }
+    } else {
+      pos = new Random().nextInt(fileList.length);
+    }
+    currentFile = fileList[pos];
 
     Image image = null;
     try {
@@ -217,10 +249,12 @@ public class Photon extends Application {
 
   private File[] getFiles(File dir) {
     if (Settings.ADD_IMAGE_RECURSIVELY) {
-      ArrayList<File> files = new ArrayList<>();
+      //ArrayList<File> files = new ArrayList<>();
+      TreeSet<File> files = new TreeSet<>();
       try {
         Files.walk(Paths.get(dir.toURI()))
                 .filter(Files::isRegularFile)
+                .filter(this::isPhoto)
                 .forEach(f -> files.add(f.toFile()));
       } catch (IOException ioe) {
         ioe.printStackTrace();
@@ -235,6 +269,16 @@ public class Photon extends Application {
         }
       });
     }
+  }
+
+  private boolean isPhoto(Path path) {
+    String p = path.toString();
+    if (p.length() < 4) {
+      return false;
+    } else {
+      return fileExtensions.contains(p.substring(p.length() - 4));
+    }
+
   }
 
   private void reset(ImageView imageView, double width, double height) {
