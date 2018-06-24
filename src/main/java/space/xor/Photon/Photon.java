@@ -27,23 +27,22 @@ import java.util.*;
 public class Photon extends Application {
   private Scene scene = null;
   private StackPane root = null;
-  private ImageView imgView = null;
-  private Text startupTips = null;
+  private ImageView imageView = null;
+  private Text startPage = null;
   private File[] fileList = null;
-  private File currentFile = null;
-  private double imgWidth = 0;
-  private double imgHeight = 0;
+  private double imageWidth = 0;
+  private double imageHeight = 0;
 
-  private boolean ordered = true;
   private int pos = 0;
-  private LinkedList<Integer> previousFiles = new LinkedList<>();
+  private boolean inOrder = true;
+  private LinkedList<Integer> history = new LinkedList<>();
 
   private volatile boolean slidePlaying = false;
-  private Runnable runnable = () -> {
+  private final Runnable playSlide = () -> {
     try {
       while (slidePlaying) {
         Thread.sleep(Settings.SLIDE_INTERVAL);
-        showImage(true);
+        next();
       }
     } catch (InterruptedException ie) {
       ie.printStackTrace();
@@ -52,36 +51,42 @@ public class Photon extends Application {
 
   @Override
   public void start(Stage primaryStage) {
-    primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
+    primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
     primaryStage.setResizable(Settings.WINDOW_RESIZABLE);
     scene = new Scene(createScene());
     scene.setOnKeyPressed(k -> {
       switch (k.getCode()) {
         case D: {
-          getDirectory(false);
-          showImage(true);
+          if (getDirectory(false)) {
+            showImage();
+            history.add(pos);
+            startPage.setVisible(false);
+          }
           break;
         }
         case F: {
-          getDirectory(true);
-          showImage(true);
+          if (getDirectory(true)) {
+            showImage();
+            history.add(pos);
+            startPage.setVisible(false);
+          }
           break;
         }
         case UP: {
-          Utils.revealImageInFinder(currentFile);
+          Utils.revealImageInFinder(getCurrentFile());
           break;
         }
         case LEFT: {
-          rewind();
+          prev();
           break;
         }
         case RIGHT: {
-          showImage(true);
+          next();
           break;
         }
         case SLASH: {
-          ordered = !ordered;
-          primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
+          inOrder = !inOrder;
+          primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
           break;
         }
         case P: {
@@ -95,11 +100,11 @@ public class Photon extends Application {
               slidePlaying = false;
             } else {
               slidePlaying = true;
-              Thread thread = new Thread(runnable);
+              Thread thread = new Thread(playSlide);
               thread.setDaemon(true);
               thread.start();
             }
-            primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
+            primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
           }
           break;
         }
@@ -116,11 +121,7 @@ public class Photon extends Application {
   }
 
   private Parent createScene() {
-    createPane();
-    return root;
-  }
-
-  private void createPane() {
+    // create Pane
     root = new StackPane();
     root.setAlignment(Pos.CENTER);
 
@@ -131,32 +132,32 @@ public class Photon extends Application {
     root.setPrefSize(tmpWidth, tmpHeight);
     root.setBackground(new Background(new BackgroundFill(Settings.BACKGROUND_COLOR, null, null)));
 
-    startupTips = new Text(Settings.STARTUP_TIPS);
-    startupTips.setFill(Color.WHITE);
-    startupTips.setFont(Settings.TIPS_FONT);
-    root.getChildren().add(startupTips);
+    startPage = new Text(Settings.STARTUP_TIPS);
+    startPage.setFill(Color.WHITE);
+    startPage.setFont(Settings.TIPS_FONT);
+    root.getChildren().add(startPage);
 
-    imgView = new ImageView();
-    imgView.setPreserveRatio(true);
-    imgView.fitWidthProperty().bind(root.widthProperty());
-    imgView.fitHeightProperty().bind(root.heightProperty());
+    imageView = new ImageView();
+    imageView.setPreserveRatio(true);
+    imageView.fitWidthProperty().bind(root.widthProperty());
+    imageView.fitHeightProperty().bind(root.heightProperty());
 
     ObjectProperty<Point2D> mouseDown = new SimpleObjectProperty<>();
 
-    imgView.setOnMousePressed(e -> {
-      Point2D mousePress = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
+    imageView.setOnMousePressed(e -> {
+      Point2D mousePress = Utils.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
       mouseDown.set(mousePress);
     });
 
-    imgView.setOnMouseDragged(e -> {
-      Point2D dragPoint = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
-      Utils.shift(imgView, dragPoint.subtract(mouseDown.get()));
-      mouseDown.set(Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY())));
+    imageView.setOnMouseDragged(e -> {
+      Point2D dragPoint = Utils.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
+      Utils.shift(imageView, dragPoint.subtract(mouseDown.get()));
+      mouseDown.set(Utils.imageViewToImage(imageView, new Point2D(e.getX(), e.getY())));
     });
 
-    imgView.setOnScroll(e -> {
+    imageView.setOnScroll(e -> {
       double delta = e.getDeltaY();
-      Rectangle2D viewport = imgView.getViewport();
+      Rectangle2D viewport = imageView.getViewport();
 
       double scale = Utils.clamp(Math.pow(1.01, delta),
 
@@ -164,11 +165,11 @@ public class Photon extends Application {
               Math.min(Settings.MIN_PIXELS / viewport.getWidth(), Settings.MIN_PIXELS / viewport.getHeight()),
 
               // don't scale so that we're bigger than image dimensions:
-              Math.max(imgWidth / viewport.getWidth(), imgHeight / viewport.getHeight())
+              Math.max(imageWidth / viewport.getWidth(), imageHeight / viewport.getHeight())
 
       );
 
-      Point2D mouse = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
+      Point2D mouse = Utils.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
 
       double newWidth = viewport.getWidth() * scale;
       double newHeight = viewport.getHeight() * scale;
@@ -185,130 +186,113 @@ public class Photon extends Application {
       // of the imageview:
 
       double newMinX = Utils.clamp(mouse.getX() - (mouse.getX() - viewport.getMinX()) * scale,
-              0, imgWidth - newWidth);
+              0, imageWidth - newWidth);
       double newMinY = Utils.clamp(mouse.getY() - (mouse.getY() - viewport.getMinY()) * scale,
-              0, imgHeight - newHeight);
+              0, imageHeight - newHeight);
 
-      imgView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
+      imageView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
     });
 
     root.setOnMouseClicked(e -> {
       if (e.getButton().name().equals("SECONDARY")) {
-        showImage(true);
+        next();
       }
 //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
 //                changeImagechangeImage(e);
 //            }
 //            else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
-//                reset(imgView, imgWidth, imgHeight);
+//                reset(imageView, imageWidth, imageHeight);
 //            }
     });
-    ;
 
-    root.getChildren().add(imgView);
+    root.getChildren().add(imageView);
+    return root;
   }
 
-  private void showImage(boolean forward) {
-    if (fileList == null) {
-      return;
-    }
-
-    if (pos < 0) {
-      if (forward) {
-        pos++;
-        if (pos == 0) {
-          pos =  previousFiles.get(previousFiles.size() - 1);
-          genNextPos();
-          currentFile = fileList[pos];
-        } else {
-          currentFile = fileList[previousFiles.get(previousFiles.size() + pos)];
-        }
-      } else {
-        currentFile = fileList[previousFiles.get(previousFiles.size() + pos)];
-      }
+  private File getCurrentFile() {
+    if (pos >= 0) {
+      return fileList[pos];
     } else {
-      if (pos == 0 && previousFiles.size() == 0) {
-        pos = -1;
-      }
-      genNextPos();
-      previousFiles.add(pos);
-      if (previousFiles.size() > Settings.REWIND_CAPABILITY) {
-        previousFiles.removeFirst();
-      }
-
-      currentFile = fileList[pos];
+      return fileList[history.get(history.size() + pos)];
     }
-
-    openImage();
   }
 
-  private void clearFileList() {
-    pos = 0;
-    previousFiles.clear();
-    slidePlaying = false;
-    fileList = null;
-    currentFile = null;
-  }
-
-  private void getDirectory(boolean byFile) {
-    if (fileList != null) {
-      clearFileList();
-    }
-
+  private boolean getDirectory(boolean byFile) {
     if (byFile) {
       FileChooser fc = new FileChooser();
       File file = fc.showOpenDialog(null);
       if (file == null) {
-        return;
+        return false;
       } else {
+        if (fileList != null) {
+          clearFilesAndHistory();
+        }
+
         fileList = Utils.getFiles(file.getParentFile());
+
         int i = 0;
         for (; i < fileList.length; i++) {
-          if (fileList[i] == file) {
+          if (fileList[i].equals(file)) {
             pos = i;
+            break;
           }
         }
         if (i == fileList.length) {
           pos = 0;
         }
-
-        System.out.println(i);
       }
     } else {
       DirectoryChooser dc = new DirectoryChooser();
       File file = dc.showDialog(null);
       if (file == null) {
-        return;
+        return false;
       } else {
+        if (fileList != null) {
+          clearFilesAndHistory();
+        }
+
         fileList = Utils.getFiles(file);
       }
     }
 
     if (fileList.length == 0) {
       fileList = null;
-      startupTips.setVisible(true);
-      return;
+      return false;
     } else {
-      startupTips.setVisible(false);
+      return true;
     }
   }
 
-  private void openImage() {
-    Image image = null;
-    try {
-      image = new Image(new FileInputStream(currentFile));
-    } catch (Exception ex) {
+  private void clearFilesAndHistory() {
+    fileList = null;
+    history = new LinkedList<>();
+    pos = 0;
+    slidePlaying = false;
+  }
+
+  private void next() {
+    if (fileList == null) {
       return;
     }
 
-    imgWidth = image.getWidth();
-    imgHeight = image.getHeight();
-    imgView.setImage(image);
-    Utils.reset(imgView, imgWidth, imgHeight);
+    if (pos < 0) {
+        pos++;
+        if (pos == 0) {
+          pos = history.get(history.size() - 1);
+          genNextPos();
+        }
+    } else {
+      genNextPos();
+      history.add(pos);
+      if (history.size() > Settings.HISTORY_CAPABILITY) {
+        history.removeFirst();
+      }
+    }
+    showImage();
   }
 
-  private void rewind() {
-    if (pos <= -previousFiles.size()) {
+  private void prev() {
+    if (pos <= -history.size() || history.size() == 1) {
       return;
     }
 
@@ -317,11 +301,11 @@ public class Photon extends Application {
     } else {
       pos--;
     }
-    showImage(false);
+    showImage();
   }
 
   private void genNextPos() {
-    if (ordered) {
+    if (inOrder) {
       pos++;
       if (pos == fileList.length) {
         pos = 0;
@@ -329,6 +313,25 @@ public class Photon extends Application {
     } else {
       pos = new Random().nextInt(fileList.length);
     }
+  }
+
+  private void showImage() {
+    if (fileList == null) {
+      return;
+    }
+
+    Image image = null;
+    try {
+      image = new Image(new FileInputStream(getCurrentFile()));
+
+    } catch (Exception ex) {
+      return;
+    }
+
+    imageWidth = image.getWidth();
+    imageHeight = image.getHeight();
+    imageView.setImage(image);
+    Utils.reset(imageView, imageWidth, imageHeight);
   }
 
   public static void main(String[] args) {
