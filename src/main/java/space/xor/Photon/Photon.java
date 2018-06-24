@@ -1,4 +1,4 @@
-package Photon;
+package space.xor.Photon;
 
 import javafx.application.Application;
 import javafx.beans.property.ObjectProperty;
@@ -16,15 +16,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class Photon extends Application {
@@ -39,18 +36,6 @@ public class Photon extends Application {
 
   private boolean ordered = true;
   private int pos = 0;
-  private Set fileExtensions = new HashSet() {
-    {
-      add(".jpg");
-      add(".png");
-      add(".gif");
-      add("jpeg");
-      add(".bmp");
-      //add(".tif");
-      //add("tiff");
-      //add(".ico");
-    }
-  };
   private LinkedList<Integer> previousFiles = new LinkedList<>();
 
   private volatile boolean slidePlaying = false;
@@ -58,7 +43,7 @@ public class Photon extends Application {
     try {
       while (slidePlaying) {
         Thread.sleep(Settings.SLIDE_INTERVAL);
-        btnClicked(true);
+        showImage(true);
       }
     } catch (InterruptedException ie) {
       ie.printStackTrace();
@@ -67,26 +52,36 @@ public class Photon extends Application {
 
   @Override
   public void start(Stage primaryStage) {
-    primaryStage.setTitle(genTitle());
+    primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
     primaryStage.setResizable(Settings.WINDOW_RESIZABLE);
     scene = new Scene(createScene());
     scene.setOnKeyPressed(k -> {
       switch (k.getCode()) {
+        case D: {
+          getDirectory(false);
+          showImage(true);
+          break;
+        }
+        case F: {
+          getDirectory(true);
+          showImage(true);
+          break;
+        }
         case UP: {
-          revealImageInFinder();
+          Utils.revealImageInFinder(currentFile);
           break;
         }
         case LEFT: {
-          recall();
+          rewind();
           break;
         }
         case RIGHT: {
-          btnClicked(true);
+          showImage(true);
           break;
         }
         case SLASH: {
           ordered = !ordered;
-          primaryStage.setTitle(genTitle());
+          primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
           break;
         }
         case P: {
@@ -101,9 +96,10 @@ public class Photon extends Application {
             } else {
               slidePlaying = true;
               Thread thread = new Thread(runnable);
+              thread.setDaemon(true);
               thread.start();
             }
-            primaryStage.setTitle(genTitle());
+            primaryStage.setTitle(Utils.genTitle(ordered, slidePlaying));
           }
           break;
         }
@@ -148,21 +144,21 @@ public class Photon extends Application {
     ObjectProperty<Point2D> mouseDown = new SimpleObjectProperty<>();
 
     imgView.setOnMousePressed(e -> {
-      Point2D mousePress = imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
+      Point2D mousePress = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
       mouseDown.set(mousePress);
     });
 
     imgView.setOnMouseDragged(e -> {
-      Point2D dragPoint = imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
-      shift(imgView, dragPoint.subtract(mouseDown.get()));
-      mouseDown.set(imageViewToImage(imgView, new Point2D(e.getX(), e.getY())));
+      Point2D dragPoint = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
+      Utils.shift(imgView, dragPoint.subtract(mouseDown.get()));
+      mouseDown.set(Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY())));
     });
 
     imgView.setOnScroll(e -> {
       double delta = e.getDeltaY();
       Rectangle2D viewport = imgView.getViewport();
 
-      double scale = clamp(Math.pow(1.01, delta),
+      double scale = Utils.clamp(Math.pow(1.01, delta),
 
               // don't scale so we're zoomed in to fewer than MIN_PIXELS in any direction:
               Math.min(Settings.MIN_PIXELS / viewport.getWidth(), Settings.MIN_PIXELS / viewport.getHeight()),
@@ -172,7 +168,7 @@ public class Photon extends Application {
 
       );
 
-      Point2D mouse = imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
+      Point2D mouse = Utils.imageViewToImage(imgView, new Point2D(e.getX(), e.getY()));
 
       double newWidth = viewport.getWidth() * scale;
       double newHeight = viewport.getHeight() * scale;
@@ -188,9 +184,9 @@ public class Photon extends Application {
       // we then clamp this value so the image never scrolls out
       // of the imageview:
 
-      double newMinX = clamp(mouse.getX() - (mouse.getX() - viewport.getMinX()) * scale,
+      double newMinX = Utils.clamp(mouse.getX() - (mouse.getX() - viewport.getMinX()) * scale,
               0, imgWidth - newWidth);
-      double newMinY = clamp(mouse.getY() - (mouse.getY() - viewport.getMinY()) * scale,
+      double newMinY = Utils.clamp(mouse.getY() - (mouse.getY() - viewport.getMinY()) * scale,
               0, imgHeight - newHeight);
 
       imgView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
@@ -198,10 +194,10 @@ public class Photon extends Application {
 
     root.setOnMouseClicked(e -> {
       if (e.getButton().name().equals("SECONDARY")) {
-        btnClicked(true);
+        showImage(true);
       }
 //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
-//                btnClicked(e);
+//                changeImagechangeImage(e);
 //            }
 //            else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
 //                reset(imgView, imgWidth, imgHeight);
@@ -212,38 +208,13 @@ public class Photon extends Application {
     root.getChildren().add(imgView);
   }
 
-  private String genTitle() {
-    return new StringBuilder()
-            .append(Settings.APP_NAME)
-            .append("    ")
-            .append(ordered ? "#in-order" : "#random")
-            .append(slidePlaying ? " #slide-mode" : "")
-            .toString();
-  }
-
-  private void btnClicked(boolean moveForward) {
+  private void showImage(boolean forward) {
     if (fileList == null) {
-      // get files at first
-      DirectoryChooser directoryChooser = new DirectoryChooser();
-
-      File directory = directoryChooser.showDialog(null);
-      if (directory == null) {
-        return;
-      } else {
-        fileList = getFiles(directory);
-      }
-
-      if (fileList.length == 0) {
-        fileList = null;
-        startupTips.setVisible(true);
-        return;
-      } else {
-        startupTips.setVisible(false);
-      }
+      return;
     }
 
     if (pos < 0) {
-      if (moveForward) {
+      if (forward) {
         pos++;
         if (pos == 0) {
           pos =  previousFiles.get(previousFiles.size() - 1);
@@ -261,13 +232,68 @@ public class Photon extends Application {
       }
       genNextPos();
       previousFiles.add(pos);
-      if (previousFiles.size() > Settings.RECALL_CAPABILITY) {
+      if (previousFiles.size() > Settings.REWIND_CAPABILITY) {
         previousFiles.removeFirst();
       }
 
       currentFile = fileList[pos];
     }
 
+    openImage();
+  }
+
+  private void clearFileList() {
+    pos = 0;
+    previousFiles.clear();
+    slidePlaying = false;
+    fileList = null;
+    currentFile = null;
+  }
+
+  private void getDirectory(boolean byFile) {
+    if (fileList != null) {
+      clearFileList();
+    }
+
+    if (byFile) {
+      FileChooser fc = new FileChooser();
+      File file = fc.showOpenDialog(null);
+      if (file == null) {
+        return;
+      } else {
+        fileList = Utils.getFiles(file.getParentFile());
+        int i = 0;
+        for (; i < fileList.length; i++) {
+          if (fileList[i] == file) {
+            pos = i;
+          }
+        }
+        if (i == fileList.length) {
+          pos = 0;
+        }
+
+        System.out.println(i);
+      }
+    } else {
+      DirectoryChooser dc = new DirectoryChooser();
+      File file = dc.showDialog(null);
+      if (file == null) {
+        return;
+      } else {
+        fileList = Utils.getFiles(file);
+      }
+    }
+
+    if (fileList.length == 0) {
+      fileList = null;
+      startupTips.setVisible(true);
+      return;
+    } else {
+      startupTips.setVisible(false);
+    }
+  }
+
+  private void openImage() {
     Image image = null;
     try {
       image = new Image(new FileInputStream(currentFile));
@@ -278,10 +304,10 @@ public class Photon extends Application {
     imgWidth = image.getWidth();
     imgHeight = image.getHeight();
     imgView.setImage(image);
-    reset(imgView, imgWidth, imgHeight);
+    Utils.reset(imgView, imgWidth, imgHeight);
   }
 
-  private void recall() {
+  private void rewind() {
     if (pos <= -previousFiles.size()) {
       return;
     }
@@ -291,7 +317,7 @@ public class Photon extends Application {
     } else {
       pos--;
     }
-    btnClicked(false);
+    showImage(false);
   }
 
   private void genNextPos() {
@@ -303,102 +329,6 @@ public class Photon extends Application {
     } else {
       pos = new Random().nextInt(fileList.length);
     }
-  }
-
-  private void revealImageInFinder() {
-    if (currentFile == null || !currentFile.exists()) {
-      return;
-    }
-
-    try {
-      Runtime.getRuntime().exec(new String[]{
-              "open",
-              "-R",
-              currentFile.getPath(),
-      });
-    } catch (IOException ioe) {
-      ioe.printStackTrace();
-    }
-  }
-
-  private File[] getFiles(File dir) {
-    if (Settings.ADD_IMAGE_RECURSIVELY) {
-      //ArrayList<File> files = new ArrayList<>();
-      TreeSet<File> files = new TreeSet<>();
-      try {
-        Files.walk(Paths.get(dir.toURI()))
-                .filter(Files::isRegularFile)
-                .filter(this::isPhoto)
-                .forEach(f -> files.add(f.toFile()));
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
-      return files.toArray(new File[files.size()]);
-    } else {
-      return dir.listFiles(pathname -> {
-        if (pathname.isDirectory()) {
-          return false;
-        } else {
-          return true;
-        }
-      });
-    }
-  }
-
-  private boolean isPhoto(Path path) {
-    String p = path.toString();
-    if (p.length() < 4) {
-      return false;
-    } else {
-      return fileExtensions.contains(p.substring(p.length() - 4));
-    }
-
-  }
-
-  private void reset(ImageView imageView, double width, double height) {
-    imageView.setViewport(new Rectangle2D(0, 0, width, height));
-  }
-
-  /**
-   * shift the viewport of the imageView by the specified delta, clamping so
-   * the viewport does not move off the actual image:
-   */
-  private void shift(ImageView imageView, Point2D delta) {
-    Rectangle2D viewport = imageView.getViewport();
-
-    double width = imageView.getImage().getWidth();
-    double height = imageView.getImage().getHeight();
-
-    double maxX = width - viewport.getWidth();
-    double maxY = height - viewport.getHeight();
-
-    double minX = clamp(viewport.getMinX() - delta.getX(), 0, maxX);
-    double minY = clamp(viewport.getMinY() - delta.getY(), 0, maxY);
-
-    imageView.setViewport(new Rectangle2D(minX, minY, viewport.getWidth(), viewport.getHeight()));
-  }
-
-  private double clamp(double value, double min, double max) {
-    if (value < min) {
-      return min;
-    } else if (value > max) {
-      return max;
-    } else {
-      return value;
-    }
-  }
-
-  /**
-   * convert mouse coordinates in the imageView to coordinates in the actual image
-   */
-  private Point2D imageViewToImage(ImageView imageView, Point2D imageViewCoordinates) {
-    double xProportion = imageViewCoordinates.getX() / imageView.getBoundsInLocal().getWidth();
-    double yProportion = imageViewCoordinates.getY() / imageView.getBoundsInLocal().getHeight();
-
-    Rectangle2D viewport = imageView.getViewport();
-    return new Point2D(
-            viewport.getMinX() + xProportion * viewport.getWidth(),
-            viewport.getMinY() + yProportion * viewport.getHeight());
   }
 
   public static void main(String[] args) {
