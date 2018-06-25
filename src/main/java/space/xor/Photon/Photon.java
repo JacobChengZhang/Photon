@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.util.*;
 
 public class Photon extends Application {
+  private Stage stage = null;
   private Scene scene = null;
   private StackPane root = null;
   private ImageView imageView = null;
@@ -52,26 +53,19 @@ public class Photon extends Application {
 
   @Override
   public void start(Stage primaryStage) {
-    primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
-    primaryStage.setResizable(Settings.WINDOW_RESIZABLE);
-    primaryStage.setOnCloseRequest(e -> Platform.exit());
+    stage = primaryStage;
+    stage.setResizable(Settings.WINDOW_RESIZABLE);
+    stage.setOnCloseRequest(e -> Platform.exit());
+    updateTitle();
     scene = new Scene(createScene());
     scene.setOnKeyPressed(k -> {
       switch (k.getCode()) {
         case D: {
-          if (getDirectory(false)) {
-            showImage();
-            history.add(pos);
-            startPage.setVisible(false);
-          }
+          openDirectory(false);
           break;
         }
         case F: {
-          if (getDirectory(true)) {
-            showImage();
-            history.add(pos);
-            startPage.setVisible(false);
-          }
+          openDirectory(true);
           break;
         }
         case UP: {
@@ -88,24 +82,11 @@ public class Photon extends Application {
         }
         case SLASH: {
           inOrder = !inOrder;
-          primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
+          updateTitle();
           break;
         }
         case P: {
-          if (fileList != null) {
-            /*
-            Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
-            you can achieve a higher speed on slide playing.
-            So, it's not a bug. It is actually a feature.
-             */
-            if (slidePlaying) {
-              slidePlaying = false;
-            } else {
-              slidePlaying = true;
-              Utils.ftp.execute(playSlide);
-            }
-            primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
-          }
+          toggleSlideMode();
           break;
         }
         case ESCAPE: {
@@ -209,11 +190,28 @@ public class Photon extends Application {
     return root;
   }
 
+  private void updateTitle() {
+    stage.setTitle(new StringBuilder()
+            .append(Settings.APP_NAME)
+            .append("    ")
+            .append(inOrder ? "#in-order" : "#random")
+            .append(slidePlaying ? " #slide-mode" : "")
+            .toString());
+  }
+
   private File getCurrentFile() {
     if (pos >= 0) {
       return fileList[pos];
     } else {
       return fileList[history.get(history.size() + pos)];
+    }
+  }
+
+  private void openDirectory(boolean byFile) {
+    if (getDirectory(byFile)) {
+      showImage();
+      history.add(pos);
+      startPage.setVisible(false);
     }
   }
 
@@ -268,6 +266,23 @@ public class Photon extends Application {
     history = new LinkedList<>();
     pos = 0;
     slidePlaying = false;
+  }
+
+  private void toggleSlideMode() {
+    if (fileList != null) {
+            /*
+            Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
+            you can achieve a higher speed on toggleSlideMode playing.
+            So, it's not a bug. It is actually a feature.
+             */
+      if (slidePlaying) {
+        slidePlaying = false;
+      } else {
+        slidePlaying = true;
+        Utils.ftp.execute(playSlide);
+      }
+      updateTitle();
+    }
   }
 
   private void next() {

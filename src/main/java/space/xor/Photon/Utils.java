@@ -59,15 +59,6 @@ public class Utils {
 
   }
 
-  public static String genTitle(boolean ordered, boolean slidePlaying) {
-    return new StringBuilder()
-            .append(Settings.APP_NAME)
-            .append("    ")
-            .append(ordered ? "#in-order" : "#random")
-            .append(slidePlaying ? " #slide-mode" : "")
-            .toString();
-  }
-
   public static File[] getFiles(File dir) {
     TreeSet<File> files = new TreeSet<>();
     try {
