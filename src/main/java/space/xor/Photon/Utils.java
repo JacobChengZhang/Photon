@@ -10,8 +10,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class Utils {
   private static final Set fileExtensions = new HashSet() {
@@ -26,6 +30,24 @@ public class Utils {
       //add(".ico");
     }
   };
+
+  private static final Random rnd = new Random();
+
+  private static class DaemonThreadFactory implements ThreadFactory {
+    public Thread newThread(Runnable r) {
+      Thread thread = new Thread(r);
+      thread.setDaemon(true);
+      return thread;
+    }
+  }
+
+  private static final DaemonThreadFactory dtf = new DaemonThreadFactory();
+
+  public static final ExecutorService ftp = Executors.newFixedThreadPool(Settings.MAX_THREAD, dtf);
+
+  public static int nextRandomInt(int limit) {
+    return rnd.nextInt(limit);
+  }
 
   public static boolean isPhoto(Path path) {
     String p = path.toString();

@@ -23,5 +23,6 @@ public class Settings {
 
   public static final int HISTORY_CAPABILITY = 128;
 
+  public static final int MAX_THREAD = 5;
   public static final int SLIDE_INTERVAL = 4000;
 }

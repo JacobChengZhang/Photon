@@ -1,6 +1,7 @@
 package space.xor.Photon;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Point2D;
@@ -53,6 +54,7 @@ public class Photon extends Application {
   public void start(Stage primaryStage) {
     primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
     primaryStage.setResizable(Settings.WINDOW_RESIZABLE);
+    primaryStage.setOnCloseRequest(e -> Platform.exit());
     scene = new Scene(createScene());
     scene.setOnKeyPressed(k -> {
       switch (k.getCode()) {
@@ -100,16 +102,14 @@ public class Photon extends Application {
               slidePlaying = false;
             } else {
               slidePlaying = true;
-              Thread thread = new Thread(playSlide);
-              thread.setDaemon(true);
-              thread.start();
+              Utils.ftp.execute(playSlide);
             }
             primaryStage.setTitle(Utils.genTitle(inOrder, slidePlaying));
           }
           break;
         }
         case ESCAPE: {
-          System.exit(0);
+          Platform.exit();
         }
         default: {
           break;
@@ -311,7 +311,7 @@ public class Photon extends Application {
         pos = 0;
       }
     } else {
-      pos = new Random().nextInt(fileList.length);
+      pos = Utils.nextRandomInt(fileList.length);
     }
   }
 
@@ -320,10 +320,9 @@ public class Photon extends Application {
       return;
     }
 
-    Image image = null;
+    final Image image;
     try {
       image = new Image(new FileInputStream(getCurrentFile()));
-
     } catch (Exception ex) {
       return;
     }
