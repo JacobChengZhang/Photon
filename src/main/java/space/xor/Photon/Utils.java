@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 public class Utils {
-  private static final Set fileExtensions = new HashSet() {
+  private static final Set fileExtensions = new HashSet<String>() {
     {
       add(".jpg");
       add(".png");
@@ -69,7 +69,7 @@ public class Utils {
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
-    return files.toArray(new File[files.size()]);
+    return files.toArray(new File[0]);
   }
 
   public static double clamp(double value, double min, double max) {

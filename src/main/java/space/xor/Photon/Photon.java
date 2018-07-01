@@ -191,12 +191,10 @@ public class Photon extends Application {
   }
 
   private void updateTitle() {
-    stage.setTitle(new StringBuilder()
-            .append(Settings.APP_NAME)
-            .append("    ")
-            .append(inOrder ? "#in-order" : "#random")
-            .append(slidePlaying ? " #slide-mode" : "")
-            .toString());
+    stage.setTitle(Settings.APP_NAME +
+                   "    " +
+                   (inOrder ? "#in-order" : "#random") +
+                   (slidePlaying ? " #slide-mode" : ""));
   }
 
   private File getCurrentFile() {
