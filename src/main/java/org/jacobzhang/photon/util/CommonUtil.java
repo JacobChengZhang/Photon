@@ -77,6 +77,7 @@ public class CommonUtil {
     }
 
     public static double clamp(double value, double min, double max) {
+        assert(min <= max);
         if (value < min) {
             return min;
         } else if (value > max) {
