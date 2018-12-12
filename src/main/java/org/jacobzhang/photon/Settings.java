@@ -1,10 +1,10 @@
-package space.xor.Photon;
+package org.jacobzhang.photon;
 
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 public class Settings {
-  public static final String APP_NAME = "Photon";
+  public static final String APP_NAME = "photon";
   public static final String STARTUP_TIPS =
                   "Press 'D'                  ->  Open Directory\n\n"+
                   "Press 'F'                  ->  Open File (and its directory)\n\n"+

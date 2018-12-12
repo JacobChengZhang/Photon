@@ -1,4 +1,4 @@
-package space.xor.Photon;
+package org.jacobzhang.photon;
 
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;

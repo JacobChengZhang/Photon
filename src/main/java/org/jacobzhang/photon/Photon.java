@@ -1,4 +1,4 @@
-package space.xor.Photon;
+package org.jacobzhang.photon;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -192,9 +192,9 @@ public class Photon extends Application {
 
   private void updateTitle() {
     stage.setTitle(Settings.APP_NAME +
-                   "    " +
-                   (inOrder ? "#in-order" : "#random") +
-                   (slidePlaying ? " #slide-mode" : ""));
+            "    " +
+            (inOrder ? "#in-order" : "#random") +
+            (slidePlaying ? " #slide-mode" : ""));
   }
 
   private File getCurrentFile() {
@@ -289,11 +289,11 @@ public class Photon extends Application {
     }
 
     if (pos < 0) {
-        pos++;
-        if (pos == 0) {
-          pos = history.get(history.size() - 1);
-          genNextPos();
-        }
+      pos++;
+      if (pos == 0) {
+        pos = history.get(history.size() - 1);
+        genNextPos();
+      }
     } else {
       genNextPos();
       history.add(pos);
