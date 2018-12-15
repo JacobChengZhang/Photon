@@ -19,7 +19,7 @@ import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.jacobzhang.photon.constants.PhotonConstants;
+import org.jacobzhang.photon.constant.PhotonConstant;
 import org.jacobzhang.photon.util.CommonUtil;
 
 import java.awt.GraphicsDevice;
@@ -50,7 +50,7 @@ public class Photon extends Application {
                                                  try {
                                                      while (slidePlaying) {
                                                          Thread
-                                                             .sleep(PhotonConstants.SLIDE_INTERVAL);
+                                                             .sleep(PhotonConstant.SLIDE_INTERVAL);
                                                          next();
                                                      }
                                                  } catch (InterruptedException ie) {
@@ -61,7 +61,7 @@ public class Photon extends Application {
     @Override
     public void start(Stage primaryStage) {
         stage = primaryStage;
-        stage.setResizable(PhotonConstants.WINDOW_RESIZABLE);
+        stage.setResizable(PhotonConstant.WINDOW_RESIZABLE);
         stage.setOnCloseRequest(e -> Platform.exit());
         updateTitle();
         scene = new Scene(createScene());
@@ -123,12 +123,12 @@ public class Photon extends Application {
         int tmpHeight = gd.getDisplayMode().getHeight();
 
         root.setPrefSize(tmpWidth, tmpHeight);
-        root.setBackground(new Background(new BackgroundFill(PhotonConstants.BACKGROUND_COLOR,
+        root.setBackground(new Background(new BackgroundFill(PhotonConstant.BACKGROUND_COLOR,
             null, null)));
 
-        startPage = new Text(PhotonConstants.STARTUP_TIPS);
+        startPage = new Text(PhotonConstant.STARTUP_TIPS);
         startPage.setFill(Color.WHITE);
-        startPage.setFont(PhotonConstants.TIPS_FONT);
+        startPage.setFont(PhotonConstant.TIPS_FONT);
         root.getChildren().add(startPage);
 
         imageView = new ImageView();
@@ -159,8 +159,8 @@ public class Photon extends Application {
                 double scale = CommonUtil.clamp(Math.pow(1.01, delta),
 
                     // don't scale so we're zoomed in to fewer than MIN_PIXELS in any direction:
-                    Math.min(PhotonConstants.MIN_PIXELS / viewport.getWidth(),
-                        PhotonConstants.MIN_PIXELS / viewport.getHeight()),
+                    Math.min(PhotonConstant.MIN_PIXELS / viewport.getWidth(),
+                        PhotonConstant.MIN_PIXELS / viewport.getHeight()),
 
                     // don't scale so that we're bigger than image dimensions:
                     Math.max(imageWidth / viewport.getWidth(), imageHeight / viewport.getHeight())
@@ -219,7 +219,7 @@ public class Photon extends Application {
     }
 
     private void updateTitle() {
-        stage.setTitle(PhotonConstants.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
+        stage.setTitle(PhotonConstant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
                        + (slidePlaying ? " #slide-mode" : ""));
     }
 
@@ -303,7 +303,7 @@ public class Photon extends Application {
                 slidePlaying = false;
             } else {
                 slidePlaying = true;
-                PhotonConstants.FIXED_THREAD_POOL.execute(playSlide);
+                PhotonConstant.FIXED_THREAD_POOL.execute(playSlide);
             }
             updateTitle();
         }
@@ -323,7 +323,7 @@ public class Photon extends Application {
         } else {
             genNextPos();
             history.add(pos);
-            if (history.size() > PhotonConstants.HISTORY_CAPABILITY) {
+            if (history.size() > PhotonConstant.HISTORY_CAPABILITY) {
                 history.removeFirst();
             }
         }

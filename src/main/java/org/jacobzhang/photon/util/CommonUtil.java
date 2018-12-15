@@ -3,7 +3,7 @@ package org.jacobzhang.photon.util;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.ImageView;
-import org.jacobzhang.photon.constants.PhotonConstants;
+import org.jacobzhang.photon.constant.PhotonConstant;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,29 +17,29 @@ import java.util.TreeSet;
  */
 public class CommonUtil {
 
-    public static boolean stringNotEmpty(String string) {
+    public static boolean stringIsNotEmpty(String string) {
         return string != null && string.length() > 0;
     }
 
     public static int nextRandomInt(int limit) {
-        return PhotonConstants.RANDOM.nextInt(limit);
+        return PhotonConstant.RANDOM.nextInt(limit);
     }
 
-    private static boolean isVisibleImage(Path path) {
+    private static boolean customFileCheck(Path path) {
         assert(path != null);
-        return isImageExtension(path) && isVisibleFile(path);
+        return isImageExtension(path) && isFileVisible(path);
     }
 
     private static boolean isImageExtension(Path path) {
         String filepath = path.toString();
-        return filepath.length() >= PhotonConstants.FILE_EXTENSIONS_LENGTH && PhotonConstants.FILE_EXTENSIONS
-            .contains(filepath.substring(filepath.length() - PhotonConstants.FILE_EXTENSIONS_LENGTH));
+        return filepath.length() >= PhotonConstant.FILE_EXTENSION_DEFAULT_LENGTH && PhotonConstant.FILE_EXTENSIONS
+            .contains(filepath.substring(filepath.length() - PhotonConstant.FILE_EXTENSION_DEFAULT_LENGTH));
     }
 
-    private static boolean isVisibleFile(Path path) {
+    private static boolean isFileVisible(Path path) {
         if (path.getFileName() != null) {
             String filename = path.getFileName().toString();
-            if (stringNotEmpty(filename)) {
+            if (stringIsNotEmpty(filename)) {
                 return filename.charAt(0) != '.';
             }
         }
@@ -51,7 +51,7 @@ public class CommonUtil {
         TreeSet<File> files = new TreeSet<>();
         try {
             Files.walk(Paths.get(dir.toURI())).filter(Files::isRegularFile)
-                .filter(CommonUtil::isVisibleImage).forEach(f -> files.add(f.toFile()));
+                .filter(CommonUtil::customFileCheck).forEach(f -> files.add(f.toFile()));
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
