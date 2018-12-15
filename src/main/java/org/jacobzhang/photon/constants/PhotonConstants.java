@@ -18,17 +18,17 @@ public class PhotonConstants {
      * description
      */
     public static final String               APP_NAME               = "photon";
-    public static final String               STARTUP_TIPS           = "[H] Toggle Help\n\n"
-                                                                      + "[D] Open Directory\n\n"
-                                                                      + "[F] Open File (and its directory)\n\n"
-                                                                      + "[\u2192 or Right Click] Next Photo\n\n"
-                                                                      + "[\u2191] Show in Finder\n\n"
-                                                                      + "[\u2190] Previous Photo\n\n"
-                                                                      + "[/] Toggle In-Order / Random\n\n"
-                                                                      + "[P] Toggle Browse / Slide\n\n"
-                                                                      + "[Scroll] Zoom Photo\n\n"
-                                                                      + "[Drag] Move Photo\n\n"
-                                                                      + "[Esc] Quit\n\n";
+    public static final String               STARTUP_TIPS           = "               [H] Help\n\n"
+                                                                      + "               [D] Open Directory\n\n"
+                                                                      + "               [F] Open File (with its directory)\n\n"
+                                                                      + "          [Scroll] Zoom\n\n"
+                                                                      + "            [Drag] Drag\n\n"
+                                                                      + "[Right Click or \u2192] Next\n\n"
+                                                                      + "               [\u2190] Previous\n\n"
+                                                                      + "               [\u2191] Show in Finder\n\n"
+                                                                      + "               [/] Toggle Random\n\n"
+                                                                      + "               [S] Toggle Slide\n\n"
+                                                                      + "             [Esc] Quit\n\n";
     public static final Font                 TIPS_FONT              = new Font("Monaco", 22);
 
     /**
