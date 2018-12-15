@@ -75,6 +75,10 @@ public class Photon extends Application {
                     openDirectory(true);
                     break;
                 }
+                case H: {
+                    toggleHelp();
+                    break;
+                }
                 case UP: {
                     CommonUtil.revealImageInFinder(getCurrentFile());
                     break;
@@ -202,6 +206,16 @@ public class Photon extends Application {
 
         root.getChildren().add(imageView);
         return root;
+    }
+
+    private void toggleHelp() {
+        if (root.getChildren().get(1).isVisible()) {
+            root.getChildren().get(1).setVisible(false);
+            root.getChildren().get(0).setVisible(true);
+        } else {
+            root.getChildren().get(1).setVisible(true);
+            root.getChildren().get(0).setVisible(false);
+        }
     }
 
     private void updateTitle() {

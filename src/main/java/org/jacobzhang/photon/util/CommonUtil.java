@@ -17,33 +17,41 @@ import java.util.TreeSet;
  */
 public class CommonUtil {
 
+    public static boolean stringNotEmpty(String string) {
+        return string != null && string.length() > 0;
+    }
+
     public static int nextRandomInt(int limit) {
         return PhotonConstants.RANDOM.nextInt(limit);
     }
 
-    private static boolean isPhoto(Path path) {
-        String p = path.toString();
-        if (p.length() < PhotonConstants.FILE_EXTENSIONS_LENGTH) {
-            return false;
-        } else {
-            return PhotonConstants.FILE_EXTENSIONS
-                .contains(p.substring(p.length() - PhotonConstants.FILE_EXTENSIONS_LENGTH));
-        }
+    private static boolean isVisibleImage(Path path) {
+        assert(path != null);
+        return isImageExtension(path) && isVisibleFile(path);
     }
 
-    private static boolean isVisible(Path path) {
-        String p = path.toString();
-        int lastSlashPos = p.lastIndexOf('/');
-        return lastSlashPos == -1
-               || (lastSlashPos < p.length() - 1 && p.charAt(lastSlashPos + 1) != '.');
+    private static boolean isImageExtension(Path path) {
+        String filepath = path.toString();
+        return filepath.length() >= PhotonConstants.FILE_EXTENSIONS_LENGTH && PhotonConstants.FILE_EXTENSIONS
+            .contains(filepath.substring(filepath.length() - PhotonConstants.FILE_EXTENSIONS_LENGTH));
+    }
+
+    private static boolean isVisibleFile(Path path) {
+        if (path.getFileName() != null) {
+            String filename = path.getFileName().toString();
+            if (stringNotEmpty(filename)) {
+                return filename.charAt(0) != '.';
+            }
+        }
+        return false;
     }
 
     public static File[] getFiles(File dir) {
+        assert(dir != null);
         TreeSet<File> files = new TreeSet<>();
         try {
             Files.walk(Paths.get(dir.toURI())).filter(Files::isRegularFile)
-                .filter(CommonUtil::isPhoto).filter(CommonUtil::isVisible)
-                .forEach(f -> files.add(f.toFile()));
+                .filter(CommonUtil::isVisibleImage).forEach(f -> files.add(f.toFile()));
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
