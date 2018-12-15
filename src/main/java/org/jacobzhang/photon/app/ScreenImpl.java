@@ -19,7 +19,9 @@ import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.jacobzhang.photon.constant.PhotonConstant;
+import org.jacobzhang.photon.constant.Constant;
+import org.jacobzhang.photon.model.Photon;
+import org.jacobzhang.photon.model.PhotonImpl;
 import org.jacobzhang.photon.util.CommonUtil;
 
 import java.awt.GraphicsDevice;
@@ -31,7 +33,8 @@ import java.util.LinkedList;
 /**
  * @author JacobChengZhang
  */
-public class Photon extends Application {
+public class ScreenImpl extends Application implements Screen {
+    private Photon              photon       = null;
     private Stage               stage        = null;
     private Scene               scene        = null;
     private StackPane           root         = null;
@@ -49,8 +52,7 @@ public class Photon extends Application {
     private final Runnable      playSlide    = () -> {
                                                  try {
                                                      while (slidePlaying) {
-                                                         Thread
-                                                             .sleep(PhotonConstant.SLIDE_INTERVAL);
+                                                         Thread.sleep(Constant.SLIDE_INTERVAL);
                                                          next();
                                                      }
                                                  } catch (InterruptedException ie) {
@@ -60,59 +62,35 @@ public class Photon extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        stage = primaryStage;
-        stage.setResizable(PhotonConstant.WINDOW_RESIZABLE);
-        stage.setOnCloseRequest(e -> Platform.exit());
-        updateTitle();
-        scene = new Scene(createScene());
-        scene.setOnKeyPressed(k -> {
-            switch (k.getCode()) {
-                case D: {
-                    openDirectory(false);
-                    break;
-                }
-                case F: {
-                    openDirectory(true);
-                    break;
-                }
-                case H: {
-                    toggleHelp();
-                    break;
-                }
-                case UP: {
-                    CommonUtil.revealImageInFinder(getCurrentFile());
-                    break;
-                }
-                case LEFT: {
-                    prev();
-                    break;
-                }
-                case RIGHT: {
-                    next();
-                    break;
-                }
-                case SLASH: {
-                    inOrder = !inOrder;
-                    updateTitle();
-                    break;
-                }
-                case P: {
-                    toggleSlideMode();
-                    break;
-                }
-                case ESCAPE: {
-                    Platform.exit();
-                }
-                default: {
-                    break;
-                }
-            }
-        });
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        initStage(primaryStage);
+
+        this.photon = new PhotonImpl(this);
+        photon.init();
     }
 
-    private Parent createScene() {
+    private void initStage(Stage primaryStage) {
+        this.stage = primaryStage;
+        this.stage.setResizable(Constant.WINDOW_RESIZABLE);
+        this.stage.setOnCloseRequest(e -> Platform.exit());
+    }
+
+    @Override
+    public void setScene(Scene scene) {
+        this.scene = scene;
+    }
+
+    @Override
+    public Scene getScene() {
+        return this.scene;
+    }
+
+    @Override
+    public Stage getStage() {
+        return this.stage;
+    }
+
+    @Override
+    public Parent createScene() {
         // create Pane
         root = new StackPane();
         root.setAlignment(Pos.CENTER);
@@ -123,12 +101,11 @@ public class Photon extends Application {
         int tmpHeight = gd.getDisplayMode().getHeight();
 
         root.setPrefSize(tmpWidth, tmpHeight);
-        root.setBackground(new Background(new BackgroundFill(PhotonConstant.BACKGROUND_COLOR,
-            null, null)));
+        root.setBackground(new Background(new BackgroundFill(Constant.BACKGROUND_COLOR, null, null)));
 
-        startPage = new Text(PhotonConstant.STARTUP_TIPS);
+        startPage = new Text(Constant.STARTUP_TIPS);
         startPage.setFill(Color.WHITE);
-        startPage.setFont(PhotonConstant.TIPS_FONT);
+        startPage.setFont(Constant.TIPS_FONT);
         root.getChildren().add(startPage);
 
         imageView = new ImageView();
@@ -156,11 +133,12 @@ public class Photon extends Application {
                 double delta = e.getDeltaY();
                 Rectangle2D viewport = imageView.getViewport();
 
-                double scale = CommonUtil.clamp(Math.pow(1.01, delta),
+                double scale = CommonUtil.clamp(
+                    Math.pow(1.01, delta),
 
                     // don't scale so we're zoomed in to fewer than MIN_PIXELS in any direction:
-                    Math.min(PhotonConstant.MIN_PIXELS / viewport.getWidth(),
-                        PhotonConstant.MIN_PIXELS / viewport.getHeight()),
+                    Math.min(Constant.MIN_PIXELS / viewport.getWidth(), Constant.MIN_PIXELS
+                                                                        / viewport.getHeight()),
 
                     // don't scale so that we're bigger than image dimensions:
                     Math.max(imageWidth / viewport.getWidth(), imageHeight / viewport.getHeight())
@@ -177,20 +155,22 @@ public class Photon extends Application {
                 // (x - newViewportMinX) / (x - currentViewportMinX) = scale
                 // where x is the mouse X coordinate in the image
 
-            // solving this for newViewportMinX gives
+                // solving this for newViewportMinX gives
 
-            // newViewportMinX = x - (x - currentViewportMinX) * scale
+                // newViewportMinX = x - (x - currentViewportMinX) * scale
 
-            // we then clamp this value so the image never scrolls out
-            // of the imageview:
+                // we then clamp this value so the image never scrolls out
+                // of the imageview:
 
-            double newMinX = CommonUtil.clamp(mouse.getX() - (mouse.getX() - viewport.getMinX())
-                                              * scale, 0, imageWidth - newWidth);
-            double newMinY = CommonUtil.clamp(mouse.getY() - (mouse.getY() - viewport.getMinY())
-                                              * scale, 0, imageHeight - newHeight);
+                double newMinX = CommonUtil.clamp(mouse.getX()
+                                                  - (mouse.getX() - viewport.getMinX()) * scale, 0,
+                    imageWidth - newWidth);
+                double newMinY = CommonUtil.clamp(mouse.getY()
+                                                  - (mouse.getY() - viewport.getMinY()) * scale, 0,
+                    imageHeight - newHeight);
 
-            imageView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
-        });
+                imageView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
+            });
 
         root.setOnMouseClicked(e -> {
             if (e.getButton().name().equals("SECONDARY")) {
@@ -208,22 +188,25 @@ public class Photon extends Application {
         return root;
     }
 
-    private void toggleHelp() {
-        if (root.getChildren().get(1).isVisible()) {
-            root.getChildren().get(1).setVisible(false);
-            root.getChildren().get(0).setVisible(true);
+    @Override
+    public void toggleHelp() {
+        if (imageView.isVisible()) {
+            imageView.setVisible(false);
+            startPage.setVisible(true);
         } else {
-            root.getChildren().get(1).setVisible(true);
-            root.getChildren().get(0).setVisible(false);
+            imageView.setVisible(true);
+            startPage.setVisible(false);
         }
     }
 
-    private void updateTitle() {
-        stage.setTitle(PhotonConstant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
+    @Override
+    public void updateTitle() {
+        stage.setTitle(Constant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
                        + (slidePlaying ? " #slide-mode" : ""));
     }
 
-    private File getCurrentFile() {
+    @Override
+    public File getCurrentFile() {
         if (pos >= 0) {
             return fileList[pos];
         } else {
@@ -231,12 +214,18 @@ public class Photon extends Application {
         }
     }
 
-    private void openDirectory(boolean byFile) {
+    @Override
+    public void openDirectory(boolean byFile) {
         if (getDirectory(byFile)) {
             showImage();
             history.add(pos);
             startPage.setVisible(false);
         }
+    }
+
+    @Override
+    public void toggleRandom() {
+        inOrder = !inOrder;
     }
 
     private boolean getDirectory(boolean byFile) {
@@ -292,7 +281,8 @@ public class Photon extends Application {
         slidePlaying = false;
     }
 
-    private void toggleSlideMode() {
+    @Override
+    public void toggleSlideMode() {
         if (fileList != null) {
             /**
              * Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
@@ -303,13 +293,14 @@ public class Photon extends Application {
                 slidePlaying = false;
             } else {
                 slidePlaying = true;
-                PhotonConstant.FIXED_THREAD_POOL.execute(playSlide);
+                Constant.FIXED_THREAD_POOL.execute(playSlide);
             }
             updateTitle();
         }
     }
 
-    private void next() {
+    @Override
+    public void next() {
         if (fileList == null) {
             return;
         }
@@ -323,14 +314,15 @@ public class Photon extends Application {
         } else {
             genNextPos();
             history.add(pos);
-            if (history.size() > PhotonConstant.HISTORY_CAPABILITY) {
+            if (history.size() > Constant.HISTORY_CAPABILITY) {
                 history.removeFirst();
             }
         }
         showImage();
     }
 
-    private void prev() {
+    @Override
+    public void prev() {
         if (pos <= -history.size() || history.size() == 1) {
             return;
         }
@@ -354,7 +346,8 @@ public class Photon extends Application {
         }
     }
 
-    private void showImage() {
+    @Override
+    public void showImage() {
         if (fileList == null) {
             return;
         }

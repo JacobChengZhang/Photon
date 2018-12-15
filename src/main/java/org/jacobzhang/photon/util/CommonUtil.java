@@ -3,7 +3,7 @@ package org.jacobzhang.photon.util;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.ImageView;
-import org.jacobzhang.photon.constant.PhotonConstant;
+import org.jacobzhang.photon.constant.Constant;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +22,7 @@ public class CommonUtil {
     }
 
     public static int nextRandomInt(int limit) {
-        return PhotonConstant.RANDOM.nextInt(limit);
+        return Constant.RANDOM.nextInt(limit);
     }
 
     private static boolean customFileCheck(Path path) {
@@ -32,8 +32,8 @@ public class CommonUtil {
 
     private static boolean isImageExtension(Path path) {
         String filepath = path.toString();
-        return filepath.length() >= PhotonConstant.FILE_EXTENSION_DEFAULT_LENGTH && PhotonConstant.FILE_EXTENSIONS
-            .contains(filepath.substring(filepath.length() - PhotonConstant.FILE_EXTENSION_DEFAULT_LENGTH));
+        return filepath.length() >= Constant.FILE_EXTENSION_DEFAULT_LENGTH && Constant.FILE_EXTENSIONS
+            .contains(filepath.substring(filepath.length() - Constant.FILE_EXTENSION_DEFAULT_LENGTH));
     }
 
     private static boolean isFileVisible(Path path) {

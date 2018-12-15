@@ -15,7 +15,7 @@ import org.jacobzhang.photon.model.DaemonThreadFactory;
 /**
  * @author JacobChengZhang
  */
-public class PhotonConstant {
+public class Constant {
     /**
      * description
      */
