@@ -32,30 +32,31 @@ import java.util.LinkedList;
  * @author JacobChengZhang
  */
 public class Photon extends Application {
-    private Stage stage = null;
-    private Scene scene = null;
-    private StackPane root = null;
-    private ImageView imageView = null;
-    private Text startPage = null;
-    private File[] fileList = null;
-    private double imageWidth = 0;
-    private double imageHeight = 0;
+    private Stage               stage        = null;
+    private Scene               scene        = null;
+    private StackPane           root         = null;
+    private ImageView           imageView    = null;
+    private Text                startPage    = null;
+    private File[]              fileList     = null;
+    private double              imageWidth   = 0;
+    private double              imageHeight  = 0;
 
-    private int pos = 0;
-    private boolean inOrder = true;
-    private LinkedList<Integer> history = new LinkedList<>();
+    private int                 pos          = 0;
+    private boolean             inOrder      = true;
+    private LinkedList<Integer> history      = new LinkedList<>();
 
-    private volatile boolean slidePlaying = false;
-    private final Runnable playSlide = () -> {
-        try {
-            while (slidePlaying) {
-                Thread.sleep(PhotonConstants.SLIDE_INTERVAL);
-                next();
-            }
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
-        }
-    };
+    private volatile boolean    slidePlaying = false;
+    private final Runnable      playSlide    = () -> {
+                                                 try {
+                                                     while (slidePlaying) {
+                                                         Thread
+                                                             .sleep(PhotonConstants.SLIDE_INTERVAL);
+                                                         next();
+                                                     }
+                                                 } catch (InterruptedException ie) {
+                                                     ie.printStackTrace();
+                                                 }
+                                             };
 
     @Override
     public void start(Stage primaryStage) {
@@ -112,12 +113,14 @@ public class Photon extends Application {
         root = new StackPane();
         root.setAlignment(Pos.CENTER);
 
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment()
+            .getDefaultScreenDevice();
         int tmpWidth = gd.getDisplayMode().getWidth();
         int tmpHeight = gd.getDisplayMode().getHeight();
 
         root.setPrefSize(tmpWidth, tmpHeight);
-        root.setBackground(new Background(new BackgroundFill(PhotonConstants.BACKGROUND_COLOR, null, null)));
+        root.setBackground(new Background(new BackgroundFill(PhotonConstants.BACKGROUND_COLOR,
+            null, null)));
 
         startPage = new Text(PhotonConstants.STARTUP_TIPS);
         startPage.setFill(Color.WHITE);
@@ -132,38 +135,43 @@ public class Photon extends Application {
         ObjectProperty<Point2D> mouseDown = new SimpleObjectProperty<>();
 
         imageView.setOnMousePressed(e -> {
-            Point2D mousePress = CommonUtil.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
+            Point2D mousePress = CommonUtil.imageViewToImage(imageView,
+                new Point2D(e.getX(), e.getY()));
             mouseDown.set(mousePress);
         });
 
         imageView.setOnMouseDragged(e -> {
-            Point2D dragPoint = CommonUtil.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
+            Point2D dragPoint = CommonUtil.imageViewToImage(imageView,
+                new Point2D(e.getX(), e.getY()));
             CommonUtil.shift(imageView, dragPoint.subtract(mouseDown.get()));
             mouseDown.set(CommonUtil.imageViewToImage(imageView, new Point2D(e.getX(), e.getY())));
         });
 
-        imageView.setOnScroll(e -> {
-            double delta = e.getDeltaY();
-            Rectangle2D viewport = imageView.getViewport();
+        imageView
+            .setOnScroll(e -> {
+                double delta = e.getDeltaY();
+                Rectangle2D viewport = imageView.getViewport();
 
-            double scale = CommonUtil.clamp(Math.pow(1.01, delta),
+                double scale = CommonUtil.clamp(Math.pow(1.01, delta),
 
                     // don't scale so we're zoomed in to fewer than MIN_PIXELS in any direction:
-                    Math.min(PhotonConstants.MIN_PIXELS / viewport.getWidth(), PhotonConstants.MIN_PIXELS / viewport.getHeight()),
+                    Math.min(PhotonConstants.MIN_PIXELS / viewport.getWidth(),
+                        PhotonConstants.MIN_PIXELS / viewport.getHeight()),
 
                     // don't scale so that we're bigger than image dimensions:
                     Math.max(imageWidth / viewport.getWidth(), imageHeight / viewport.getHeight())
 
-            );
+                );
 
-            Point2D mouse = CommonUtil.imageViewToImage(imageView, new Point2D(e.getX(), e.getY()));
+                Point2D mouse = CommonUtil.imageViewToImage(imageView,
+                    new Point2D(e.getX(), e.getY()));
 
-            double newWidth = viewport.getWidth() * scale;
-            double newHeight = viewport.getHeight() * scale;
+                double newWidth = viewport.getWidth() * scale;
+                double newHeight = viewport.getHeight() * scale;
 
-            // To keep the visual point under the mouse from moving, we need
-            // (x - newViewportMinX) / (x - currentViewportMinX) = scale
-            // where x is the mouse X coordinate in the image
+                // To keep the visual point under the mouse from moving, we need
+                // (x - newViewportMinX) / (x - currentViewportMinX) = scale
+                // where x is the mouse X coordinate in the image
 
             // solving this for newViewportMinX gives
 
@@ -172,10 +180,10 @@ public class Photon extends Application {
             // we then clamp this value so the image never scrolls out
             // of the imageview:
 
-            double newMinX = CommonUtil.clamp(mouse.getX() - (mouse.getX() - viewport.getMinX()) * scale,
-                    0, imageWidth - newWidth);
-            double newMinY = CommonUtil.clamp(mouse.getY() - (mouse.getY() - viewport.getMinY()) * scale,
-                    0, imageHeight - newHeight);
+            double newMinX = CommonUtil.clamp(mouse.getX() - (mouse.getX() - viewport.getMinX())
+                                              * scale, 0, imageWidth - newWidth);
+            double newMinY = CommonUtil.clamp(mouse.getY() - (mouse.getY() - viewport.getMinY())
+                                              * scale, 0, imageHeight - newHeight);
 
             imageView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
         });
@@ -184,12 +192,12 @@ public class Photon extends Application {
             if (e.getButton().name().equals("SECONDARY")) {
                 next();
             }
-//            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
-//                changeImagechangeImage(e);
-//            }
-//            else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
-//                reset(imageView, imageWidth, imageHeight);
-//            }
+            //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
+            //                changeImagechangeImage(e);
+            //            }
+            //            else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
+            //                reset(imageView, imageWidth, imageHeight);
+            //            }
         });
 
         root.getChildren().add(imageView);
@@ -197,10 +205,8 @@ public class Photon extends Application {
     }
 
     private void updateTitle() {
-        stage.setTitle(PhotonConstants.APP_NAME +
-                "    " +
-                (inOrder ? "#in-order" : "#random") +
-                (slidePlaying ? " #slide-mode" : ""));
+        stage.setTitle(PhotonConstants.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
+                       + (slidePlaying ? " #slide-mode" : ""));
     }
 
     private File getCurrentFile() {
@@ -274,16 +280,16 @@ public class Photon extends Application {
 
     private void toggleSlideMode() {
         if (fileList != null) {
-            /*
-            Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
-            you can achieve a higher speed on toggleSlideMode playing.
-            So, it's not a bug. It is actually a feature.
+            /**
+             * Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
+             * you can achieve a higher speed on toggleSlideMode playing.
+             * So, it's not a bug. It is actually a feature.
              */
             if (slidePlaying) {
                 slidePlaying = false;
             } else {
                 slidePlaying = true;
-                CommonUtil.ftp.execute(playSlide);
+                PhotonConstants.FIXED_THREAD_POOL.execute(playSlide);
             }
             updateTitle();
         }

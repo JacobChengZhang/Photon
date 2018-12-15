@@ -10,66 +10,40 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author JacobChengZhang
  */
 public class CommonUtil {
-    private static final Set fileExtensions = new HashSet<String>() {
-        {
-            add(".jpg");
-            add(".png");
-            add(".gif");
-            add("jpeg");
-            add(".bmp");
-            //add(".tif");
-            //add("tiff");
-            //add(".ico");
-        }
-    };
-
-    private static final Random rnd = new Random();
-
-    private static class DaemonThreadFactory implements ThreadFactory {
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            return thread;
-        }
-    }
-
-    private static final DaemonThreadFactory dtf = new DaemonThreadFactory();
-
-    public static final ExecutorService ftp = Executors.newFixedThreadPool(PhotonConstants.MAX_THREAD, dtf);
 
     public static int nextRandomInt(int limit) {
-        return rnd.nextInt(limit);
+        return PhotonConstants.RANDOM.nextInt(limit);
     }
 
-    public static boolean isPhoto(Path path) {
+    private static boolean isPhoto(Path path) {
         String p = path.toString();
-        if (p.length() < 4) {
+        if (p.length() < PhotonConstants.FILE_EXTENSIONS_LENGTH) {
             return false;
         } else {
-            return fileExtensions.contains(p.substring(p.length() - 4));
+            return PhotonConstants.FILE_EXTENSIONS
+                .contains(p.substring(p.length() - PhotonConstants.FILE_EXTENSIONS_LENGTH));
         }
+    }
 
+    private static boolean isVisible(Path path) {
+        String p = path.toString();
+        int lastSlashPos = p.lastIndexOf('/');
+        return lastSlashPos == -1
+               || (lastSlashPos < p.length() - 1 && p.charAt(lastSlashPos + 1) != '.');
     }
 
     public static File[] getFiles(File dir) {
         TreeSet<File> files = new TreeSet<>();
         try {
-            Files.walk(Paths.get(dir.toURI()))
-                    .filter(Files::isRegularFile)
-                    .filter(CommonUtil::isPhoto)
-                    .forEach(f -> files.add(f.toFile()));
+            Files.walk(Paths.get(dir.toURI())).filter(Files::isRegularFile)
+                .filter(CommonUtil::isPhoto).filter(CommonUtil::isVisible)
+                .forEach(f -> files.add(f.toFile()));
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -77,7 +51,7 @@ public class CommonUtil {
     }
 
     public static double clamp(double value, double min, double max) {
-        assert(min <= max);
+        assert (min <= max);
         if (value < min) {
             return min;
         } else if (value > max) {
@@ -93,11 +67,7 @@ public class CommonUtil {
         }
 
         try {
-            Runtime.getRuntime().exec(new String[]{
-                    "open",
-                    "-R",
-                    file.getPath(),
-            });
+            Runtime.getRuntime().exec(new String[] { "open", "-R", file.getPath(), });
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -119,7 +89,8 @@ public class CommonUtil {
         double minX = CommonUtil.clamp(viewport.getMinX() - delta.getX(), 0, maxX);
         double minY = CommonUtil.clamp(viewport.getMinY() - delta.getY(), 0, maxY);
 
-        imageView.setViewport(new Rectangle2D(minX, minY, viewport.getWidth(), viewport.getHeight()));
+        imageView
+            .setViewport(new Rectangle2D(minX, minY, viewport.getWidth(), viewport.getHeight()));
     }
 
     /**
@@ -130,9 +101,8 @@ public class CommonUtil {
         double yProportion = imageViewCoordinates.getY() / imageView.getBoundsInLocal().getHeight();
 
         Rectangle2D viewport = imageView.getViewport();
-        return new Point2D(
-                viewport.getMinX() + xProportion * viewport.getWidth(),
-                viewport.getMinY() + yProportion * viewport.getHeight());
+        return new Point2D(viewport.getMinX() + xProportion * viewport.getWidth(),
+            viewport.getMinY() + yProportion * viewport.getHeight());
     }
 
     public static void reset(ImageView imageView, double width, double height) {
