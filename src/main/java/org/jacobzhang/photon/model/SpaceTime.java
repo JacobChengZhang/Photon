@@ -5,7 +5,7 @@ package org.jacobzhang.photon.model;
 
 /**
  * @author JacobChengZhang
- * @version $Id: Future.java, v 0.1 2018年12月16日 6:44 AM JacobChengZhang Exp $
+ * @version $Id: SpaceTime.java, v 0.1 2018年12月16日 12:23 PM JacobChengZhang Exp $
  */
-public interface Future {
+public interface SpaceTime {
 }

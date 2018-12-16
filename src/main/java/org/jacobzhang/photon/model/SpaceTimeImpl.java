@@ -5,8 +5,7 @@ package org.jacobzhang.photon.model;
 
 /**
  * @author JacobChengZhang
- * @version $Id: HistoryImpl.java, v 0.1 2018年12月16日 6:17 AM JacobChengZhang Exp $
+ * @version $Id: SpaceTimeImpl.java, v 0.1 2018年12月16日 12:23 PM JacobChengZhang Exp $
  */
-public class HistoryImpl implements History {
-
+public class SpaceTimeImpl implements SpaceTime {
 }
