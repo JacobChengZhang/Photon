@@ -25,29 +25,8 @@ public class CommonUtil {
         return Constant.RANDOM.nextInt(limit);
     }
 
-    private static boolean customFileCheck(Path path) {
-        assert(path != null);
-        return isImageExtension(path) && isFileVisible(path);
-    }
-
-    private static boolean isImageExtension(Path path) {
-        String filepath = path.toString();
-        return filepath.length() >= Constant.FILE_EXTENSION_DEFAULT_LENGTH && Constant.FILE_EXTENSIONS
-            .contains(filepath.substring(filepath.length() - Constant.FILE_EXTENSION_DEFAULT_LENGTH));
-    }
-
-    private static boolean isFileVisible(Path path) {
-        if (path.getFileName() != null) {
-            String filename = path.getFileName().toString();
-            if (stringIsNotEmpty(filename)) {
-                return filename.charAt(0) != '.';
-            }
-        }
-        return false;
-    }
-
     public static File[] getFiles(File dir) {
-        assert(dir != null);
+        assert (dir != null);
         TreeSet<File> files = new TreeSet<>();
         try {
             Files.walk(Paths.get(dir.toURI())).filter(Files::isRegularFile)
@@ -115,5 +94,28 @@ public class CommonUtil {
 
     public static void reset(ImageView imageView, double width, double height) {
         imageView.setViewport(new Rectangle2D(0, 0, width, height));
+    }
+
+    private static boolean customFileCheck(Path path) {
+        assert (path != null);
+        return isImageExtension(path) && isFileVisible(path);
+    }
+
+    private static boolean isFileVisible(Path path) {
+        if (path.getFileName() != null) {
+            String filename = path.getFileName().toString();
+            if (stringIsNotEmpty(filename)) {
+                return filename.charAt(0) != '.';
+            }
+        }
+        return false;
+    }
+
+    private static boolean isImageExtension(Path path) {
+        String filepath = path.toString();
+        return filepath.length() >= Constant.FILE_EXTENSION_DEFAULT_LENGTH
+                && Constant.FILE_EXTENSIONS
+                .contains(filepath.substring(filepath.length()
+                        - Constant.FILE_EXTENSION_DEFAULT_LENGTH));
     }
 }

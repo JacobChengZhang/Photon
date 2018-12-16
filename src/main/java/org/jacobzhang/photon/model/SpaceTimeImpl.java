@@ -17,34 +17,33 @@ import org.jacobzhang.photon.util.CommonUtil;
  * @version $Id: SpaceTimeImpl.java, v 0.1 2018年12月16日 12:23 PM JacobChengZhang Exp $
  */
 public class SpaceTimeImpl implements SpaceTime {
-    private File[]                  fileList = null;
-    private int                 pos      = 0;
-    private boolean             inOrder  = true;
-    private LinkedList<Integer> history  = new LinkedList<>();
-
-    private volatile boolean slidePlaying = false;
+    private File[]              fileList     = null;
+    private int                 pos          = 0;
+    private boolean             inOrder      = true;
+    private LinkedList<Integer> history      = new LinkedList<>();
+    private volatile boolean    slidePlaying = false;
 
     @Override
-    public boolean getInOrder() {
+    public boolean isInOrder() {
         return this.inOrder;
     }
 
     @Override
-    public void toggleRandom() {
+    public void toggleOrder() {
         this.inOrder = !this.inOrder;
     }
 
     @Override
-    public boolean getSlidePlaying() {
+    public boolean isSlidePlaying() {
         return this.slidePlaying;
     }
 
     @Override
-    public void toggleSlideMode() {
+    public void toggleSlide() {
         if (fileList != null) {
             /**
              * Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
-             * you can achieve a higher speed on toggleSlideMode playing.
+             * you can achieve a higher speed on toggleSlide playing.
              * So, it's not a bug. It is actually a feature.
              */
             if (slidePlaying) {
@@ -56,22 +55,11 @@ public class SpaceTimeImpl implements SpaceTime {
     }
 
     @Override
-    public void clearFilesAndHistory() {
+    public void clearFileListAndHistory() {
         fileList = null;
         history = new LinkedList<>();
         pos = 0;
         slidePlaying = false;
-    }
-
-    private void genNextPos() {
-        if (inOrder) {
-            pos++;
-            if (pos == fileList.length) {
-                pos = 0;
-            }
-        } else {
-            pos = CommonUtil.nextRandomInt(fileList.length);
-        }
     }
 
     @Override
@@ -97,10 +85,10 @@ public class SpaceTimeImpl implements SpaceTime {
             pos++;
             if (pos == 0) {
                 pos = history.get(history.size() - 1);
-                genNextPos();
+                nextPos();
             }
         } else {
-            genNextPos();
+            nextPos();
             history.add(pos);
             if (history.size() > Constant.HISTORY_CAPABILITY) {
                 history.removeFirst();
@@ -126,7 +114,7 @@ public class SpaceTimeImpl implements SpaceTime {
                 return false;
             } else {
                 if (fileList != null) {
-                    clearFilesAndHistory();
+                    clearFileListAndHistory();
                 }
 
                 fileList = CommonUtil.getFiles(file.getParentFile());
@@ -149,7 +137,7 @@ public class SpaceTimeImpl implements SpaceTime {
                 return false;
             } else {
                 if (fileList != null) {
-                    clearFilesAndHistory();
+                    clearFileListAndHistory();
                 }
 
                 fileList = CommonUtil.getFiles(file);
@@ -169,4 +157,14 @@ public class SpaceTimeImpl implements SpaceTime {
         history.add(this.pos);
     }
 
+    private void nextPos() {
+        if (inOrder) {
+            pos++;
+            if (pos == fileList.length) {
+                pos = 0;
+            }
+        } else {
+            pos = CommonUtil.nextRandomInt(fileList.length);
+        }
+    }
 }

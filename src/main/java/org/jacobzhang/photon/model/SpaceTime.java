@@ -10,16 +10,15 @@ import java.io.File;
  * @version $Id: SpaceTime.java, v 0.1 2018年12月16日 12:23 PM JacobChengZhang Exp $
  */
 public interface SpaceTime {
+    boolean isInOrder();
 
-    boolean getInOrder();
+    void toggleOrder();
 
-    void toggleRandom();
+    boolean isSlidePlaying();
 
-    boolean getSlidePlaying();
+    void toggleSlide();
 
-    void toggleSlideMode();
-
-    void clearFilesAndHistory();
+    void clearFileListAndHistory();
 
     File getCurrentFile();
 

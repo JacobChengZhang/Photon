@@ -11,13 +11,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.jacobzhang.photon.constant.Constant;
 import org.jacobzhang.photon.model.Photon;
@@ -28,31 +23,36 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.LinkedList;
 
 /**
  * @author JacobChengZhang
  */
 public class ScreenImpl extends Application implements Screen {
-    private Photon              photon       = null;
-    private Stage               stage        = null;
-    private Scene               scene        = null;
-    private StackPane           root         = null;
-    private ImageView           imageView    = null;
-    private Text                startPage    = null;
-    private double              imageWidth   = 0;
-    private double              imageHeight  = 0;
+    private Photon         photon      = null;
+    private Stage          stage       = null;
+    private Scene          scene       = null;
+    private StackPane      root        = null;
+    private ImageView      imageView   = null;
+    private Text           startPage   = null;
+    private double         imageWidth  = 0;
+    private double         imageHeight = 0;
 
-    private final Runnable      playSlide    = () -> {
-                                                 try {
-                                                     while (photon.isSlidePlaying()) {
-                                                         Thread.sleep(Constant.SLIDE_INTERVAL);
-                                                         photon.next();
-                                                     }
-                                                 } catch (InterruptedException ie) {
-                                                     ie.printStackTrace();
-                                                 }
-                                             };
+    private final Runnable playSlide   = () -> {
+                                           try {
+                                               while (photon.isSlidePlaying()) {
+                                                   Thread.sleep(Constant.SLIDE_INTERVAL);
+                                                   photon.next();
+                                               }
+                                           } catch (InterruptedException ie) {
+                                               ie.printStackTrace();
+                                           }
+                                       };
+
+    private void initStage(Stage primaryStage) {
+        this.stage = primaryStage;
+        this.stage.setResizable(Constant.IS_WINDOW_RESIZABLE);
+        this.stage.setOnCloseRequest(e -> Platform.exit());
+    }
 
     @Override
     public void start(Stage primaryStage) {
@@ -62,20 +62,9 @@ public class ScreenImpl extends Application implements Screen {
         photon.init();
     }
 
-    private void initStage(Stage primaryStage) {
-        this.stage = primaryStage;
-        this.stage.setResizable(Constant.WINDOW_RESIZABLE);
-        this.stage.setOnCloseRequest(e -> Platform.exit());
-    }
-
     @Override
     public void setScene(Scene scene) {
         this.scene = scene;
-    }
-
-    @Override
-    public Scene getScene() {
-        return this.scene;
     }
 
     @Override
@@ -85,25 +74,87 @@ public class ScreenImpl extends Application implements Screen {
 
     @Override
     public Parent createScene() {
-        // create Pane
+        setRootPane();
+
+        setStartPage();
+
+        setImageView();
+
+        return root;
+    }
+
+    @Override
+    public void playSlide() {
+        Constant.FIXED_THREAD_POOL.execute(playSlide);
+    }
+
+    @Override
+    public void toggleHelp() {
+        if (startPage.isVisible()) {
+            startPage.setVisible(false);
+            imageView.setVisible(true);
+        } else {
+            startPage.setVisible(true);
+            imageView.setVisible(false);
+        }
+    }
+
+    @Override
+    public void updateTitle(boolean inOrder, boolean slidePlaying) {
+        stage.setTitle(Constant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
+                       + (slidePlaying ? " #slide-mode" : ""));
+    }
+
+    @Override
+    public void showImage(File file) {
+        assert (file != null);
+
+        final Image image;
+        try {
+            image = new Image(new FileInputStream(file));
+        } catch (Exception ex) {
+            return;
+        }
+
+        imageWidth = image.getWidth();
+        imageHeight = image.getHeight();
+        imageView.setImage(image);
+        CommonUtil.reset(imageView, imageWidth, imageHeight);
+    }
+
+    private void setRootPane() {
         root = new StackPane();
         root.setAlignment(Pos.CENTER);
 
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getDefaultScreenDevice();
-        int tmpWidth = gd.getDisplayMode().getWidth();
-        int tmpHeight = gd.getDisplayMode().getHeight();
+        root.setPrefSize(graphicsDevice.getDisplayMode().getWidth(), graphicsDevice
+            .getDisplayMode().getHeight());
 
-        root.setPrefSize(tmpWidth, tmpHeight);
-        root.setBackground(new Background(new BackgroundFill(Constant.BACKGROUND_COLOR, null, null)));
+        root.setBackground(Constant.BACKGROUND);
 
+        root.setOnMouseClicked(e -> {
+            if (e.getButton().name().equals(Constant.RIGHT_CLICK)) {
+                photon.next();
+            }
+            //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
+            //                changeImagechangeImage(e);
+            //            } else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
+            //                reset(imageView, imageWidth, imageHeight);
+            //            }
+        });
+    }
+
+    private void setStartPage() {
         startPage = new Text(Constant.STARTUP_TIPS);
-        startPage.setFill(Color.WHITE);
+        startPage.setFill(Constant.TIPS_FILL);
         startPage.setFont(Constant.TIPS_FONT);
         root.getChildren().add(startPage);
+    }
 
+    private void setImageView() {
         imageView = new ImageView();
-        imageView.setPreserveRatio(true);
+        imageView.setPreserveRatio(Constant.IS_IMAGE_VIEW_KEEP_RATIO);
         imageView.fitWidthProperty().bind(root.widthProperty());
         imageView.fitHeightProperty().bind(root.heightProperty());
 
@@ -166,59 +217,7 @@ public class ScreenImpl extends Application implements Screen {
                 imageView.setViewport(new Rectangle2D(newMinX, newMinY, newWidth, newHeight));
             });
 
-        root.setOnMouseClicked(e -> {
-            if (e.getButton().name().equals("SECONDARY")) {
-                photon.next();
-            }
-            //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
-            //                changeImagechangeImage(e);
-            //            }
-            //            else if (e.getClickCount() == 2 && e.getButton().name().equals("PRIMARY")) {
-            //                reset(imageView, imageWidth, imageHeight);
-            //            }
-        });
-
         root.getChildren().add(imageView);
-        return root;
-    }
-
-    @Override
-    public void playSlide() {
-        Constant.FIXED_THREAD_POOL.execute(playSlide);
-    }
-
-    @Override
-    public void toggleHelp() {
-        if (startPage.isVisible()) {
-            startPage.setVisible(false);
-            imageView.setVisible(true);
-        } else {
-            startPage.setVisible(true);
-            imageView.setVisible(false);
-        }
-    }
-
-    @Override
-    public void updateTitle(boolean inOrder, boolean slidePlaying) {
-        stage.setTitle(Constant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
-                       + (slidePlaying ? " #slide-mode" : ""));
-    }
-
-    @Override
-    public void showImage(File file) {
-        assert(file != null);
-
-        final Image image;
-        try {
-            image = new Image(new FileInputStream(file));
-        } catch (Exception ex) {
-            return;
-        }
-
-        imageWidth = image.getWidth();
-        imageHeight = image.getHeight();
-        imageView.setImage(image);
-        CommonUtil.reset(imageView, imageWidth, imageHeight);
     }
 
     public static void main(String[] args) {

@@ -10,7 +10,6 @@ import javafx.stage.Stage;
 import java.io.File;
 
 import org.jacobzhang.photon.app.Screen;
-import org.jacobzhang.photon.constant.Constant;
 import org.jacobzhang.photon.util.CommonUtil;
 
 /**
@@ -18,9 +17,9 @@ import org.jacobzhang.photon.util.CommonUtil;
  * @version $Id: PhotonImpl.java, v 0.1 2018年12月16日 5:53 AM JacobChengZhang Exp $
  */
 public class PhotonImpl implements Photon {
-    private Screen screen;
-    private Scene  scene;
-    private Stage  stage;
+    private Screen    screen;
+    private Scene     scene;
+    private Stage     stage;
     private SpaceTime spaceTime;
 
     public PhotonImpl(Screen screen) {
@@ -29,7 +28,7 @@ public class PhotonImpl implements Photon {
 
     @Override
     public void init() {
-        assert(screen != null);
+        assert (screen != null);
 
         this.spaceTime = new SpaceTimeImpl();
         scene = new Scene(screen.createScene());
@@ -55,7 +54,7 @@ public class PhotonImpl implements Photon {
         scene.setOnKeyPressed(k -> {
             switch (k.getCode()) {
                 case D: {
-                    openDirectory();
+                    openDirectoryRecursively();
                     break;
                 }
                 case F: {
@@ -79,11 +78,11 @@ public class PhotonImpl implements Photon {
                     break;
                 }
                 case SLASH: {
-                    toggleRandom();
+                    toggleOrder();
                     break;
                 }
                 case P: {
-                    toggleSlideMode();
+                    toggleSlide();
                     break;
                 }
                 case ESCAPE: {
@@ -98,10 +97,10 @@ public class PhotonImpl implements Photon {
     }
 
     private void updateTitle() {
-        screen.updateTitle(spaceTime.getInOrder(), spaceTime.getSlidePlaying());
+        screen.updateTitle(spaceTime.isInOrder(), spaceTime.isSlidePlaying());
     }
 
-    private void openDirectory() {
+    private void openDirectoryRecursively() {
         openDirectory(false);
     }
 
@@ -113,21 +112,13 @@ public class PhotonImpl implements Photon {
         screen.toggleHelp();
     }
 
-    private void toggleSlideMode() {
-        spaceTime.toggleSlideMode();
-        if (spaceTime.getSlidePlaying() == true) {
-            screen.playSlide();
-        }
-        updateTitle();
-    }
-
-    private void toggleRandom() {
-        spaceTime.toggleRandom();
-        updateTitle();
-    }
-
     private void revealInFinder() {
         CommonUtil.revealImageInFinder(spaceTime.getCurrentFile());
+    }
+
+    private void prev() {
+        spaceTime.prev();
+        showImage();
     }
 
     @Override
@@ -136,9 +127,17 @@ public class PhotonImpl implements Photon {
         showImage();
     }
 
-    private void prev() {
-        spaceTime.prev();
-        showImage();
+    private void toggleOrder() {
+        spaceTime.toggleOrder();
+        updateTitle();
+    }
+
+    private void toggleSlide() {
+        spaceTime.toggleSlide();
+        if (spaceTime.isSlidePlaying() == true) {
+            screen.playSlide();
+        }
+        updateTitle();
     }
 
     private void showImage() {
@@ -146,6 +145,10 @@ public class PhotonImpl implements Photon {
         if (file != null) {
             screen.showImage(file);
         }
+    }
+
+    private void exit() {
+        Platform.exit();
     }
 
     private void openDirectory(boolean byFile) {
@@ -158,10 +161,6 @@ public class PhotonImpl implements Photon {
 
     @Override
     public boolean isSlidePlaying() {
-        return spaceTime.getSlidePlaying();
-    }
-
-    private void exit() {
-        Platform.exit();
+        return spaceTime.isSlidePlaying();
     }
 }
