@@ -9,10 +9,10 @@ import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.jacobzhang.photon.constant.Constant;
 import org.jacobzhang.photon.model.Description;
@@ -35,7 +35,7 @@ public class ScreenImpl extends Application implements Screen {
     private Scene          scene       = null;
     private StackPane      root        = null;
     private ImageView      imageView   = null;
-    private Text           startPage   = null;
+    private Label          startPage   = null;
     private double         imageWidth  = 0;
     private double         imageHeight = 0;
     private Description    description = null;
@@ -175,9 +175,9 @@ public class ScreenImpl extends Application implements Screen {
     }
 
     private void setStartPage() {
-        startPage = new Text(getText(Constant.STARTUP_TIPS_KEY));
-        startPage.setFill(Constant.TIPS_FILL);
+        startPage = new Label(getText(Constant.STARTUP_TIPS_KEY));
         startPage.setFont(Constant.TIPS_FONT);
+        startPage.setTextFill(Constant.TIPS_FILL);
         root.getChildren().add(startPage);
     }
 

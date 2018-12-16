@@ -26,7 +26,7 @@ public class Constant {
     public static final String          IN_SLIDE_MODE_KEY             = "inSlideMode";
     public static final String          STARTUP_TIPS_KEY              = "startupTips";
 
-    public static final Font            TIPS_FONT                     = new Font("Monaco", 22);
+    public static final Font            TIPS_FONT                     = new Font("Monaco", 20);
     public static final Color           TIPS_FILL                     = Color.WHITE;
     public static final boolean         IS_IMAGE_VIEW_KEEP_RATIO      = true;
 

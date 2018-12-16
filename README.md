@@ -32,4 +32,3 @@ Several *new features* are still under developing, like:
 
 - Image preloading
 - More intelligent file format judging
-- Maybe a photo gallery?
