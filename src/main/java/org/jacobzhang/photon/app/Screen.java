@@ -5,7 +5,6 @@ package org.jacobzhang.photon.app;
 
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
 
 import java.io.File;
 
@@ -16,9 +15,9 @@ import java.io.File;
 public interface Screen {
     void setScene(Scene scene);
 
-    Stage getStage();
-
     Parent createScene();
+
+    void startShow();
 
     void updateTitle(boolean inOrder, boolean slidePlaying);
 
@@ -27,4 +26,6 @@ public interface Screen {
     void showImage(File file);
 
     void playSlide();
+
+    void changeLocale();
 }

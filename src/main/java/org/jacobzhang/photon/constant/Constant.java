@@ -20,18 +20,12 @@ public class Constant {
     /**
      * description
      */
-    public static final String          APP_NAME                      = "photon";
-    public static final String          STARTUP_TIPS                  = "               [H]  Help\n\n"
-                                                                        + "               [D]  Open Directory  (recursively)\n\n"
-                                                                        + "               [F]  Open File  (with its directory)\n\n"
-                                                                        + "          [Scroll]  Zoom\n\n"
-                                                                        + "            [Drag]  Drag\n\n"
-                                                                        + "[Right Click or \u2192]  Next\n\n"
-                                                                        + "               [\u2190]  Previous\n\n"
-                                                                        + "               [\u2191]  Show in Finder\n\n"
-                                                                        + "               [/]  Toggle Random\n\n"
-                                                                        + "               [S]  Toggle Slide\n\n"
-                                                                        + "             [Esc]  Quit\n\n";
+    public static final String          APP_NAME_KEY                  = "appName";
+    public static final String          IN_ORDER_KEY                  = "inOrder";
+    public static final String          IN_RANDOM_KEY                 = "inRandom";
+    public static final String          IN_SLIDE_MODE_KEY             = "inSlideMode";
+    public static final String          STARTUP_TIPS_KEY              = "startupTips";
+
     public static final Font            TIPS_FONT                     = new Font("Monaco", 22);
     public static final Color           TIPS_FILL                     = Color.WHITE;
     public static final boolean         IS_IMAGE_VIEW_KEEP_RATIO      = true;

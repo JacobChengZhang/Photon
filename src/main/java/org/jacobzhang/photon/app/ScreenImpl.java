@@ -15,6 +15,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.jacobzhang.photon.constant.Constant;
+import org.jacobzhang.photon.model.Description;
+import org.jacobzhang.photon.model.DescriptionImpl;
 import org.jacobzhang.photon.model.Photon;
 import org.jacobzhang.photon.model.PhotonImpl;
 import org.jacobzhang.photon.util.CommonUtil;
@@ -36,6 +38,7 @@ public class ScreenImpl extends Application implements Screen {
     private Text           startPage   = null;
     private double         imageWidth  = 0;
     private double         imageHeight = 0;
+    private Description    description = null;
 
     private final Runnable playSlide   = () -> {
                                            try {
@@ -54,9 +57,25 @@ public class ScreenImpl extends Application implements Screen {
         this.stage.setOnCloseRequest(e -> Platform.exit());
     }
 
+    private void initLocale() {
+        this.description = new DescriptionImpl();
+        this.description.init();
+    }
+
+    private void checkStatus() {
+        if (this.stage == null
+            || !CommonUtil.stringIsNotEmpty(this.description.getText(Constant.APP_NAME_KEY))) {
+            System.err.println("Screen init failed!");
+            Platform.exit();
+        }
+    }
+
     @Override
     public void start(Stage primaryStage) {
         initStage(primaryStage);
+        initLocale();
+
+        checkStatus();
 
         this.photon = new PhotonImpl(this);
         photon.init();
@@ -68,8 +87,9 @@ public class ScreenImpl extends Application implements Screen {
     }
 
     @Override
-    public Stage getStage() {
-        return this.stage;
+    public void startShow() {
+        stage.setScene(this.scene);
+        stage.show();
     }
 
     @Override
@@ -101,8 +121,11 @@ public class ScreenImpl extends Application implements Screen {
 
     @Override
     public void updateTitle(boolean inOrder, boolean slidePlaying) {
-        stage.setTitle(Constant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
-                       + (slidePlaying ? " #slide-mode" : ""));
+        stage.setTitle(getText(Constant.APP_NAME_KEY)
+                       + "    "
+                       + (inOrder ? getText(Constant.IN_ORDER_KEY)
+                           : getText(Constant.IN_RANDOM_KEY))
+                       + (slidePlaying ? " " + getText(Constant.IN_SLIDE_MODE_KEY) : ""));
     }
 
     @Override
@@ -120,6 +143,11 @@ public class ScreenImpl extends Application implements Screen {
         imageHeight = image.getHeight();
         imageView.setImage(image);
         CommonUtil.reset(imageView, imageWidth, imageHeight);
+    }
+
+    @Override
+    public void changeLocale() {
+        // not implemented
     }
 
     private void setRootPane() {
@@ -146,7 +174,7 @@ public class ScreenImpl extends Application implements Screen {
     }
 
     private void setStartPage() {
-        startPage = new Text(Constant.STARTUP_TIPS);
+        startPage = new Text(getText(Constant.STARTUP_TIPS_KEY));
         startPage.setFill(Constant.TIPS_FILL);
         startPage.setFont(Constant.TIPS_FONT);
         root.getChildren().add(startPage);
@@ -218,6 +246,17 @@ public class ScreenImpl extends Application implements Screen {
             });
 
         root.getChildren().add(imageView);
+    }
+
+    private String getText(String keyName) {
+        String text = this.description.getText(keyName);
+
+        if (!CommonUtil.stringIsNotEmpty(text)) {
+            System.err.println("Get description for key: " + keyName + " failed!");
+            return "";
+        } else {
+            return text;
+        }
     }
 
     public static void main(String[] args) {

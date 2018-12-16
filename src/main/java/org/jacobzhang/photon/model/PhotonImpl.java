@@ -5,7 +5,6 @@ package org.jacobzhang.photon.model;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
 
 import java.io.File;
 
@@ -19,7 +18,6 @@ import org.jacobzhang.photon.util.CommonUtil;
 public class PhotonImpl implements Photon {
     private Screen    screen;
     private Scene     scene;
-    private Stage     stage;
     private SpaceTime spaceTime;
 
     public PhotonImpl(Screen screen) {
@@ -31,21 +29,20 @@ public class PhotonImpl implements Photon {
         assert (screen != null);
 
         this.spaceTime = new SpaceTimeImpl();
+
         scene = new Scene(screen.createScene());
         screen.setScene(scene);
         updateTitle();
         setSceneListener();
-        stage = screen.getStage();
 
-        initCheck();
+        checkStatus();
 
-        stage.setScene(scene);
-        stage.show();
+        screen.startShow();
     }
 
-    private void initCheck() {
-        if (screen == null || scene == null || stage == null) {
-            System.err.println("Init failed!");
+    private void checkStatus() {
+        if (screen == null || scene == null) {
+            System.err.println("Photon init failed!");
             Platform.exit();
         }
     }

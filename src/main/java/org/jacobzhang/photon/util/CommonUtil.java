@@ -114,8 +114,8 @@ public class CommonUtil {
     private static boolean isImageExtension(Path path) {
         String filepath = path.toString();
         return filepath.length() >= Constant.FILE_EXTENSION_DEFAULT_LENGTH
-                && Constant.FILE_EXTENSIONS
-                .contains(filepath.substring(filepath.length()
-                        - Constant.FILE_EXTENSION_DEFAULT_LENGTH));
+               && Constant.FILE_EXTENSIONS
+                   .contains(filepath.substring(filepath.length()
+                                                - Constant.FILE_EXTENSION_DEFAULT_LENGTH));
     }
 }
