@@ -147,7 +147,8 @@ public class ScreenImpl extends Application implements Screen {
 
     @Override
     public void changeLocale() {
-        // not implemented
+        description.changeLocale();
+        startPage.setText(getText(Constant.STARTUP_TIPS_KEY));
     }
 
     private void setRootPane() {

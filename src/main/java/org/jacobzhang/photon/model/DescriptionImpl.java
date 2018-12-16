@@ -13,8 +13,12 @@ import java.util.ResourceBundle;
 public class DescriptionImpl implements Description {
     /**
      * changeable description
+     *
+     * Only Chinese and English are supported
      */
     private ResourceBundle resourceBundle = null;
+
+    private Locale         currentLocale  = Locale.US;
 
     @Override
     public void init() {
@@ -23,7 +27,12 @@ public class DescriptionImpl implements Description {
 
     @Override
     public void changeLocale() {
-        // not implemented
+        if (currentLocale.equals(Locale.US)) {
+            currentLocale = Locale.SIMPLIFIED_CHINESE;
+        } else {
+            currentLocale = Locale.US;
+        }
+        resourceBundle = ResourceBundle.getBundle("description", currentLocale);
     }
 
     @Override
@@ -32,8 +41,8 @@ public class DescriptionImpl implements Description {
     }
 
     private void checkLocaleAndGetResources() {
-        Locale currentLocale = Locale.getDefault();
-        if (currentLocale != Locale.SIMPLIFIED_CHINESE && currentLocale != Locale.US) {
+        currentLocale = Locale.getDefault();
+        if (!currentLocale.equals(Locale.SIMPLIFIED_CHINESE) && !currentLocale.equals(Locale.US)) {
             System.err.println("Sorry, but only Chinese and English are supported right now.");
             currentLocale = Locale.US;
         }

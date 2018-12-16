@@ -82,6 +82,11 @@ public class PhotonImpl implements Photon {
                     toggleSlide();
                     break;
                 }
+                case L: {
+                    // this case is not explicit
+            changeLocale();
+            break;
+        }
                 case ESCAPE: {
                     exit();
                     break;
@@ -142,6 +147,11 @@ public class PhotonImpl implements Photon {
         if (file != null) {
             screen.showImage(file);
         }
+    }
+
+    private void changeLocale() {
+        screen.changeLocale();
+        updateTitle();
     }
 
     private void exit() {
