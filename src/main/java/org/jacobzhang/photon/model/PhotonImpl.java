@@ -7,7 +7,10 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.File;
+
 import org.jacobzhang.photon.app.Screen;
+import org.jacobzhang.photon.constant.Constant;
 import org.jacobzhang.photon.util.CommonUtil;
 
 /**
@@ -18,6 +21,7 @@ public class PhotonImpl implements Photon {
     private Screen screen;
     private Scene  scene;
     private Stage  stage;
+    private SpaceTime spaceTime;
 
     public PhotonImpl(Screen screen) {
         this.screen = screen;
@@ -27,10 +31,10 @@ public class PhotonImpl implements Photon {
     public void init() {
         assert(screen != null);
 
+        this.spaceTime = new SpaceTimeImpl();
         scene = new Scene(screen.createScene());
-
         screen.setScene(scene);
-        screen.updateTitle();
+        updateTitle();
         setSceneListener();
         stage = screen.getStage();
 
@@ -51,45 +55,113 @@ public class PhotonImpl implements Photon {
         scene.setOnKeyPressed(k -> {
             switch (k.getCode()) {
                 case D: {
-                    screen.openDirectory(false);
+                    openDirectory();
                     break;
                 }
                 case F: {
-                    screen.openDirectory(true);
+                    openFile();
                     break;
                 }
                 case H: {
-                    screen.toggleHelp();
+                    toggleHelp();
                     break;
                 }
                 case UP: {
-                    CommonUtil.revealImageInFinder(screen.getCurrentFile());
+                    revealInFinder();
                     break;
                 }
                 case LEFT: {
-                    screen.prev();
+                    prev();
                     break;
                 }
                 case RIGHT: {
-                    screen.next();
+                    next();
                     break;
                 }
                 case SLASH: {
-                    screen.toggleRandom();
-                    screen.updateTitle();
+                    toggleRandom();
                     break;
                 }
                 case P: {
-                    screen.toggleSlideMode();
+                    toggleSlideMode();
                     break;
                 }
                 case ESCAPE: {
-                    Platform.exit();
+                    exit();
+                    break;
                 }
                 default: {
                     break;
                 }
             }
         });
+    }
+
+    private void updateTitle() {
+        screen.updateTitle(spaceTime.getInOrder(), spaceTime.getSlidePlaying());
+    }
+
+    private void openDirectory() {
+        openDirectory(false);
+    }
+
+    private void openFile() {
+        openDirectory(true);
+    }
+
+    private void toggleHelp() {
+        screen.toggleHelp();
+    }
+
+    private void toggleSlideMode() {
+        spaceTime.toggleSlideMode();
+        if (spaceTime.getSlidePlaying() == true) {
+            screen.playSlide();
+        }
+        updateTitle();
+    }
+
+    private void toggleRandom() {
+        spaceTime.toggleRandom();
+        updateTitle();
+    }
+
+    private void revealInFinder() {
+        CommonUtil.revealImageInFinder(spaceTime.getCurrentFile());
+    }
+
+    @Override
+    public void next() {
+        spaceTime.next();
+        showImage();
+    }
+
+    private void prev() {
+        spaceTime.prev();
+        showImage();
+    }
+
+    private void showImage() {
+        File file = spaceTime.getCurrentFile();
+        if (file != null) {
+            screen.showImage(file);
+        }
+    }
+
+    private void openDirectory(boolean byFile) {
+        if (spaceTime.getDirectory(byFile)) {
+            showImage();
+            spaceTime.addHistory();
+            toggleHelp();
+        }
+    }
+
+    @Override
+    public boolean isSlidePlaying() {
+        return spaceTime.getSlidePlaying();
+    }
+
+    private void exit() {
+        Platform.exit();
     }
 }

@@ -40,20 +40,14 @@ public class ScreenImpl extends Application implements Screen {
     private StackPane           root         = null;
     private ImageView           imageView    = null;
     private Text                startPage    = null;
-    private File[]              fileList     = null;
     private double              imageWidth   = 0;
     private double              imageHeight  = 0;
 
-    private int                 pos          = 0;
-    private boolean             inOrder      = true;
-    private LinkedList<Integer> history      = new LinkedList<>();
-
-    private volatile boolean    slidePlaying = false;
     private final Runnable      playSlide    = () -> {
                                                  try {
-                                                     while (slidePlaying) {
+                                                     while (photon.isSlidePlaying()) {
                                                          Thread.sleep(Constant.SLIDE_INTERVAL);
-                                                         next();
+                                                         photon.next();
                                                      }
                                                  } catch (InterruptedException ie) {
                                                      ie.printStackTrace();
@@ -174,7 +168,7 @@ public class ScreenImpl extends Application implements Screen {
 
         root.setOnMouseClicked(e -> {
             if (e.getButton().name().equals("SECONDARY")) {
-                next();
+                photon.next();
             }
             //            if (e.getClickCount() == 1 && e.getButton().name().equals("SECONDARY")) {
             //                changeImagechangeImage(e);
@@ -189,172 +183,34 @@ public class ScreenImpl extends Application implements Screen {
     }
 
     @Override
+    public void playSlide() {
+        Constant.FIXED_THREAD_POOL.execute(playSlide);
+    }
+
+    @Override
     public void toggleHelp() {
-        if (imageView.isVisible()) {
-            imageView.setVisible(false);
-            startPage.setVisible(true);
-        } else {
-            imageView.setVisible(true);
+        if (startPage.isVisible()) {
             startPage.setVisible(false);
+            imageView.setVisible(true);
+        } else {
+            startPage.setVisible(true);
+            imageView.setVisible(false);
         }
     }
 
     @Override
-    public void updateTitle() {
+    public void updateTitle(boolean inOrder, boolean slidePlaying) {
         stage.setTitle(Constant.APP_NAME + "    " + (inOrder ? "#in-order" : "#random")
                        + (slidePlaying ? " #slide-mode" : ""));
     }
 
     @Override
-    public File getCurrentFile() {
-        if (pos >= 0) {
-            return fileList[pos];
-        } else {
-            return fileList[history.get(history.size() + pos)];
-        }
-    }
-
-    @Override
-    public void openDirectory(boolean byFile) {
-        if (getDirectory(byFile)) {
-            showImage();
-            history.add(pos);
-            startPage.setVisible(false);
-        }
-    }
-
-    @Override
-    public void toggleRandom() {
-        inOrder = !inOrder;
-    }
-
-    private boolean getDirectory(boolean byFile) {
-        if (byFile) {
-            FileChooser fc = new FileChooser();
-            File file = fc.showOpenDialog(null);
-            if (file == null) {
-                return false;
-            } else {
-                if (fileList != null) {
-                    clearFilesAndHistory();
-                }
-
-                fileList = CommonUtil.getFiles(file.getParentFile());
-
-                int i = 0;
-                for (; i < fileList.length; i++) {
-                    if (fileList[i].equals(file)) {
-                        pos = i;
-                        break;
-                    }
-                }
-                if (i == fileList.length) {
-                    pos = 0;
-                }
-            }
-        } else {
-            DirectoryChooser dc = new DirectoryChooser();
-            File file = dc.showDialog(null);
-            if (file == null) {
-                return false;
-            } else {
-                if (fileList != null) {
-                    clearFilesAndHistory();
-                }
-
-                fileList = CommonUtil.getFiles(file);
-            }
-        }
-
-        if (fileList.length == 0) {
-            fileList = null;
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    private void clearFilesAndHistory() {
-        fileList = null;
-        history = new LinkedList<>();
-        pos = 0;
-        slidePlaying = false;
-    }
-
-    @Override
-    public void toggleSlideMode() {
-        if (fileList != null) {
-            /**
-             * Notice that, if you toggle this several times within the sleep interval and stop at the "on" state,
-             * you can achieve a higher speed on toggleSlideMode playing.
-             * So, it's not a bug. It is actually a feature.
-             */
-            if (slidePlaying) {
-                slidePlaying = false;
-            } else {
-                slidePlaying = true;
-                Constant.FIXED_THREAD_POOL.execute(playSlide);
-            }
-            updateTitle();
-        }
-    }
-
-    @Override
-    public void next() {
-        if (fileList == null) {
-            return;
-        }
-
-        if (pos < 0) {
-            pos++;
-            if (pos == 0) {
-                pos = history.get(history.size() - 1);
-                genNextPos();
-            }
-        } else {
-            genNextPos();
-            history.add(pos);
-            if (history.size() > Constant.HISTORY_CAPABILITY) {
-                history.removeFirst();
-            }
-        }
-        showImage();
-    }
-
-    @Override
-    public void prev() {
-        if (pos <= -history.size() || history.size() == 1) {
-            return;
-        }
-
-        if (pos >= 0) {
-            pos = -2;
-        } else {
-            pos--;
-        }
-        showImage();
-    }
-
-    private void genNextPos() {
-        if (inOrder) {
-            pos++;
-            if (pos == fileList.length) {
-                pos = 0;
-            }
-        } else {
-            pos = CommonUtil.nextRandomInt(fileList.length);
-        }
-    }
-
-    @Override
-    public void showImage() {
-        if (fileList == null) {
-            return;
-        }
+    public void showImage(File file) {
+        assert(file != null);
 
         final Image image;
         try {
-            image = new Image(new FileInputStream(getCurrentFile()));
+            image = new Image(new FileInputStream(file));
         } catch (Exception ex) {
             return;
         }

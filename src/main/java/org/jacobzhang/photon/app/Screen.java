@@ -23,21 +23,11 @@ public interface Screen {
 
     Parent createScene();
 
-    void updateTitle();
+    void updateTitle(boolean inOrder, boolean slidePlaying);
 
     void toggleHelp();
 
-    void openDirectory(boolean byFile);
+    void showImage(File file);
 
-    void prev();
-
-    void next();
-
-    void toggleSlideMode();
-
-    File getCurrentFile();
-
-    void toggleRandom();
-
-    void showImage();
+    void playSlide();
 }

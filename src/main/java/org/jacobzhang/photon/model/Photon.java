@@ -9,4 +9,8 @@ package org.jacobzhang.photon.model;
  */
 public interface Photon {
     void init();
+
+    boolean isSlidePlaying();
+
+    void next();
 }
